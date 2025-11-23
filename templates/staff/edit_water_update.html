@@ -1,0 +1,14 @@
+{% extends 'staff/base_staff.html' %}
+{% block staff_content %}
+<h2>Edit Water Update</h2>
+<form method="post" class="card p-4 shadow-sm mt-3">
+  {% csrf_token %}
+  {% for field in form %}
+    <div class="mb-3">
+      <label class="form-label">{{ field.label }}</label>
+      {{ field }}
+    </div>
+  {% endfor %}
+  <button class="btn btn-primary" type="submit">Save</button>
+</form>
+{% endblock %}

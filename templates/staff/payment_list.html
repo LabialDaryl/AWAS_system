@@ -1,0 +1,115 @@
+{% extends 'staff/base_staff.html' %}
+{% block staff_content %}
+<div class="d-flex justify-content-between align-items-center">
+  <h2 class="mb-0">Payments</h2>
+  <a href="{% url 'payments:staff_walk_in_create' %}" class="btn btn-outline-secondary btn-sm">Create Payment (Walk-in)</a>
+  </div>
+
+<form method="get" class="row g-2 align-items-end mt-3">
+  <div class="col-md-3">
+    <label class="form-label">Payment Status</label>
+    <select name="paid" class="form-select">
+      <option value="" {% if not current_paid %}selected{% endif %}>All</option>
+      <option value="paid" {% if current_paid == 'paid' %}selected{% endif %}>Paid (Completed)</option>
+      <option value="unpaid" {% if current_paid == 'unpaid' %}selected{% endif %}>Unpaid (Pending/Processing)</option>
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Purok</label>
+    <select name="purok" class="form-select">
+      <option value="" {% if not current_purok %}selected{% endif %}>All Puroks</option>
+      {% for val,label in purok_choices %}
+        <option value="{{ val }}" {% if current_purok|add:'' == val|add:'' %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <button class="btn btn-primary" type="submit">Apply Filters</button>
+    <a class="btn btn-outline-secondary" href="?">Reset</a>
+  </div>
+  <div class="col-12">
+    <small class="text-muted">Showing {{ payments|length }} payment(s).</small>
+  </div>
+</form>
+
+<div class="row mt-3">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Ref #</th>
+                <th>Customer</th>
+                <th>Purok</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in payments %}
+                <tr class="{% if request.GET.highlight and request.GET.highlight == p.payment_id|stringformat:'s' %}table-success{% endif %}">
+                  <td class="text-nowrap">{{ p.reference_number }}</td>
+                  <td>{{ p.customer.get_full_name }}</td>
+                  <td class="text-muted">{{ p.customer.purok_number }}</td>
+                  <td class="fw-semibold">₱{{ p.amount }}</td>
+                  <td>{{ p.get_payment_method_display }}</td>
+                  <td>
+                    {% if p.payment_status == 'completed' %}
+                      <span class="badge bg-success">Completed</span>
+                    {% elif p.payment_status == 'pending' %}
+                      <span class="badge bg-warning text-dark">Pending</span>
+                    {% elif p.payment_status == 'processing' %}
+                      <span class="badge bg-info text-dark">Processing</span>
+                    {% elif p.payment_status == 'failed' %}
+                      <span class="badge bg-danger">Failed</span>
+                    {% else %}
+                      <span class="badge bg-secondary">{{ p.get_payment_status_display }}</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-nowrap">{{ p.payment_date|date:'M d, Y H:i' }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="7" class="text-center py-4">No payments found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Unpaid/Partial Bills</span>
+        {% if current_purok %}
+          <span class="badge bg-primary">Purok {{ current_purok }}</span>
+        {% endif %}
+      </div>
+      <div class="list-group list-group-flush">
+        {% for b in unpaid_bills %}
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between">
+              <div>
+                <div class="fw-semibold">{{ b.customer.get_full_name }}</div>
+                <div class="small text-muted">{{ b.billing_month|date:'M Y' }} • Due {{ b.due_date|date:'M d' }}</div>
+                <div class="small">Balance: <span class="fw-semibold">₱{{ b.balance }}</span></div>
+              </div>
+              <div class="text-end">
+                <a class="btn btn-sm btn-outline-success" href="{% url 'payments:record_walk_in_payment' b.id %}">Record Walk-in</a>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="list-group-item text-muted">No unpaid bills{% if current_purok %} in Purok {{ current_purok }}{% endif %}.</div>
+        {% endfor %}
+      </div>
+      <div class="card-footer small text-muted">Showing up to 25 upcoming due bills.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

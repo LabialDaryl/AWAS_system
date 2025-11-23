@@ -1,0 +1,24 @@
+{% extends 'customer/base_customer.html' %}
+{% block customer_content %}
+<h2>Bill Details</h2>
+<div class="card p-4 shadow-sm mt-3">
+  <div class="row">
+    <div class="col-md-6">
+      <p><strong>Billing Month:</strong> {{ bill.billing_month|date:'F Y' }}</p>
+      <p><strong>Previous Reading:</strong> {{ bill.previous_reading }}</p>
+      <p><strong>Present Reading:</strong> {{ bill.present_reading }}</p>
+      <p><strong>Consumption:</strong> {{ bill.water_consumption }} cu.m</p>
+    </div>
+    <div class="col-md-6">
+      <p><strong>Minimum cu.m:</strong> {{ bill.minimum_cubic_meters }}</p>
+      <p><strong>Total Amount:</strong> ₱{{ bill.total_amount }}</p>
+      <p><strong>Balance:</strong> ₱{{ bill.balance }}</p>
+      <p><strong>Due Date:</strong> {{ bill.due_date }}</p>
+      <p><strong>Disconnection Date:</strong> {{ bill.disconnection_date }}</p>
+    </div>
+  </div>
+  {% if user == bill.customer and bill.balance > 0 %}
+    <a class="btn btn-primary" href="/payments/pay/{{ bill.id }}/">Pay Now</a>
+  {% endif %}
+</div>
+{% endblock %}

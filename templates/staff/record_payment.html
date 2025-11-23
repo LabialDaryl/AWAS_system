@@ -1,0 +1,115 @@
+{% extends 'staff/base_staff.html' %}
+{% block staff_content %}
+<div class="d-flex justify-content-between align-items-center">
+  <h2 class="mb-0">Record Walk-in Payment</h2>
+  <a href="{% url 'payments:staff_payment_list' %}" class="btn btn-outline-secondary btn-sm">Back to Payments</a>
+  </div>
+
+{# Search Panel: visible when no bill context is passed #}
+{% if not bill %}
+  <div class="card mt-3 shadow-sm">
+    <div class="card-body">
+      <form method="get" class="row g-2">
+        <div class="col-md-8">
+          <label class="form-label">Search by Customer Name or Water Meter ID</label>
+          <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="e.g. Juan Dela Cruz or WM-12345" required>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100">Search</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if query %}
+    <div class="mt-3">
+      <h6 class="text-muted">Results for "{{ query }}"</h6>
+      {% if results %}
+        {% for r in results %}
+          <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="fw-semibold">{{ r.customer.get_full_name }} <span class="text-muted">(@{{ r.customer.username }})</span></div>
+                  <div class="small text-muted">Purok {{ r.customer.purok_number }} • Water Meter ID: {{ r.customer.water_meter_id|default:'N/A' }}</div>
+                </div>
+              </div>
+              <hr>
+              <div class="list-group list-group-flush">
+                {% for b in r.unpaid_bills %}
+                  <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                      <div class="small text-muted">{{ b.billing_month|date:'F Y' }} • Due {{ b.due_date|date:'M d, Y' }}</div>
+                      <div>Balance: <span class="fw-semibold">₱{{ b.balance }}</span></div>
+                    </div>
+                    <a class="btn btn-success btn-sm" href="{% url 'payments:record_walk_in_payment' b.id %}">Pay</a>
+                  </div>
+                {% empty %}
+                  <div class="list-group-item text-muted">No unpaid bills.</div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="alert alert-warning mt-3">No customers with unpaid bills found matching your search.</div>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endif %}
+
+{# Payment Form: visible when a specific bill is provided #}
+{% if bill %}
+  <div class="card mt-3 shadow-sm">
+    <div class="card-header">Bill Details</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="small text-muted">Customer</div>
+          <div class="fw-semibold">{{ bill.customer.get_full_name }}</div>
+        </div>
+        <div class="col-md-3">
+          <div class="small text-muted">Billing Month</div>
+          <div class="fw-semibold">{{ bill.billing_month|date:'F Y' }}</div>
+        </div>
+        <div class="col-md-3">
+          <div class="small text-muted">Due Date</div>
+          <div class="fw-semibold">{{ bill.due_date|date:'M d, Y' }}</div>
+        </div>
+        <div class="col-md-3">
+          <div class="small text-muted">Total</div>
+          <div class="fw-semibold">₱{{ bill.total_amount }}</div>
+        </div>
+        <div class="col-md-3">
+          <div class="small text-muted">Paid</div>
+          <div class="fw-semibold">₱{{ bill.amount_paid }}</div>
+        </div>
+        <div class="col-md-3">
+          <div class="small text-muted">Balance</div>
+          <div class="fw-semibold text-danger">₱{{ bill.balance }}</div>
+        </div>
+        <div class="col-md-3">
+          <div class="small text-muted">Status</div>
+          <div class="fw-semibold">{{ bill.get_payment_status_display|default:bill.payment_status|capfirst }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+{% endif %}
+{% if bill %}
+  <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm mt-3">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="mb-3">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+      </div>
+    {% endfor %}
+    <button class="btn btn-primary" type="submit">
+      <i class="fas fa-cash-register me-1"></i> Pay and Record
+    </button>
+  </form>
+{% endif %}
+{% endblock %}

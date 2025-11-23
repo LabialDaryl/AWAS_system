@@ -1,0 +1,22 @@
+{% extends 'customer/base_customer.html' %}
+{% block customer_content %}
+<h2>Pay Bill</h2>
+<div class="card p-4 shadow-sm mt-3">
+  <p><strong>Billing Month:</strong> {{ bill.billing_month|date:'F Y' }}</p>
+  <p><strong>Amount Due:</strong> ₱{{ bill.balance }}</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label">Amount</label>
+      {{ form.amount }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Payment Method</label>
+      <div class="form-check">
+        {{ form.payment_method }}
+      </div>
+    </div>
+    <button class="btn btn-primary" type="submit">Continue</button>
+  </form>
+</div>
+{% endblock %}

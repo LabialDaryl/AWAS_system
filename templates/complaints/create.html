@@ -1,0 +1,14 @@
+{% extends 'customer/base_customer.html' %}
+{% block customer_content %}
+<h2>Submit Complaint/Suggestion</h2>
+<form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm mt-3">
+  {% csrf_token %}
+  {% for field in form %}
+    <div class="mb-3">
+      <label class="form-label">{{ field.label }}</label>
+      {{ field }}
+    </div>
+  {% endfor %}
+  <button class="btn btn-primary" type="submit">Submit</button>
+</form>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Process Payment</h2>
+<div class="card p-4 shadow-sm mt-3">
+  <p><strong>Reference:</strong> {{ payment.reference_number }}</p>
+  <p><strong>Bill:</strong> {{ bill.billing_month|date:'F Y' }}</p>
+  <p><strong>Amount:</strong> ₱{{ payment.amount }}</p>
+  <div class="alert alert-info">This is a placeholder for the payment gateway checkout page.</div>
+  <a class="btn btn-success" href="/payments/success/{{ payment.payment_id }}/">Simulate Success</a>
+  <a class="btn btn-danger" href="/payments/failed/{{ payment.payment_id }}/">Simulate Failure</a>
+</div>
+{% endblock %}

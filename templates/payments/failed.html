@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="alert alert-danger">
+  <h4 class="alert-heading">Payment Failed</h4>
+  <p>Payment {{ payment.reference_number }} failed or was cancelled. Please try again.</p>
+</div>
+<a class="btn btn-primary" href="/billing/customer/dashboard/">Back to Dashboard</a>
+{% endblock %}

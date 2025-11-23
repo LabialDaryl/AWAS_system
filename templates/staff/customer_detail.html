@@ -1,0 +1,24 @@
+{% extends 'staff/base_staff.html' %}
+{% block staff_content %}
+<h2>Customer Detail</h2>
+<div class="card p-4 shadow-sm mt-3">
+  <p><strong>Name:</strong> {{ customer.get_full_name }}</p>
+  <p><strong>Purok:</strong> {{ customer.purok_number }}</p>
+  <p><strong>Status:</strong> {% if customer.is_suspended %}Suspended{% else %}Active{% endif %}</p>
+  <div class="mb-2">
+    <a class="btn btn-outline-danger btn-sm" href="/billing/staff/customers/{{ customer.id }}/suspend/">Suspend</a>
+    <a class="btn btn-outline-success btn-sm" href="/billing/staff/customers/{{ customer.id }}/reinstate/">Reinstate</a>
+  </div>
+  <h5 class="mt-3">Bills</h5>
+  <ul class="list-group list-group-flush">
+    {% for b in bills %}
+      <li class="list-group-item d-flex justify-content-between">
+        <span>{{ b.billing_month|date:'F Y' }} - ₱{{ b.total_amount }} ({{ b.get_payment_status_display }})</span>
+        <a class="btn btn-sm btn-secondary" href="/billing/staff/bills/{{ b.id }}/edit/">Edit</a>
+      </li>
+    {% empty %}
+      <li class="list-group-item">No bills.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

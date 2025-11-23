@@ -1,0 +1,44 @@
+{% extends 'staff/base_staff.html' %}
+{% block staff_content %}
+<h2>Create Bill</h2>
+
+<form method="get" class="card p-3 mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-sm-4">
+      <label class="form-label">Filter by Purok</label>
+      <select name="purok" class="form-select">
+        <option value="">All Puroks</option>
+        {% for p in "12345678" %}
+          <option value="{{ p }}" {% if purok_filter == p %}selected{% endif %}>Purok {{ p }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-sm-4">
+      <div class="form-check mt-4">
+        <input class="form-check-input" type="checkbox" id="withoutBill" name="without_bill" value="1" {% if without_bill %}checked{% endif %}>
+        <label class="form-check-label" for="withoutBill">Only customers without a bill this month</label>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <button class="btn btn-primary mt-4" type="submit">Apply Filters</button>
+      <a class="btn btn-outline-secondary mt-4" href="/billing/staff/bills/create/">Reset</a>
+    </div>
+  </div>
+  <div class="small text-muted mt-2">
+    Tip: Apply filters to narrow down the customer dropdown below.
+  </div>
+  <hr/>
+</form>
+
+<form method="post" class="card p-4 shadow-sm mt-3">
+  {% csrf_token %}
+  {% for field in form %}
+    <div class="mb-3">
+      <label class="form-label">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<div class="text-danger small">{{ field.errors|striptags }}</div>{% endif %}
+    </div>
+  {% endfor %}
+  <button class="btn btn-primary" type="submit">Create</button>
+</form>
+{% endblock %}

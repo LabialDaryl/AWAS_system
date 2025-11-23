@@ -1,0 +1,15 @@
+{% extends 'customer/base_customer.html' %}
+{% block customer_content %}
+<h2>My Complaints</h2>
+<a class="btn btn-primary mb-3" href="/complaints/create/">New Complaint/Suggestion</a>
+<ul class="list-group">
+  {% for c in complaints %}
+    <li class="list-group-item d-flex justify-content-between">
+      <span><strong>{{ c.subject }}</strong> — {{ c.get_status_display }}</span>
+      <a class="btn btn-sm btn-outline-secondary" href="/complaints/{{ c.id }}/">View</a>
+    </li>
+  {% empty %}
+    <li class="list-group-item">No complaints.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

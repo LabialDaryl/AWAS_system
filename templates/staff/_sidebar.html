@@ -1,0 +1,39 @@
+<div class="card h-100">
+  <div class="card-header">Staff Menu</div>
+  <div class="list-group list-group-flush">
+    {% with path=request.path %}
+      <a class="list-group-item list-group-item-action{% if path == '/billing/staff/dashboard/' %} active{% endif %}"
+         href="/billing/staff/dashboard/">Dashboard</a>
+
+      {# customers (prefix match) #}
+      <a class="list-group-item list-group-item-action{% if path|slice:':25' == '/billing/staff/customers/' %} active{% endif %}"
+         href="/billing/staff/customers/">Customers</a>
+
+      {# any bills pages (prefix match) #}
+      <a class="list-group-item list-group-item-action{% if path|slice:':21' == '/billing/staff/bills/' %} active{% endif %}"
+         href="/billing/staff/bills/create/">Create Bill</a>
+
+      {# membership requests (prefix match) #}
+      <a class="list-group-item list-group-item-action{% if path|slice:':36' == '/billing/staff/membership-requests/' %} active{% endif %}"
+         href="/billing/staff/membership-requests/">Membership Requests</a>
+
+      {# water updates (prefix match) #}
+      <a class="list-group-item list-group-item-action{% if path|slice:':29' == '/billing/staff/water-updates/' %} active{% endif %}"
+         href="/billing/staff/water-updates/">Water Updates</a>
+
+      {# payments list (use named url to avoid 404) #}
+      {% url 'payments:staff_payment_list' as staff_payments_url %}
+      <a class="list-group-item list-group-item-action{% if request.path == staff_payments_url %} active{% endif %}"
+         href="{{ staff_payments_url }}">Payments</a>
+
+      {# complaints (prefix match) #}
+       <a class="list-group-item list-group-item-action{% if path|slice:':29' == '/billing/staff/complaints/' %} active{% endif %}"
+         href="/billing/staff/complaints/">Complaints</a>
+
+      {# Reports (prefix match) #}
+      <a class="list-group-item list-group-item-action{% if path|slice:':29' == '/billing/staff/reports/' %} active{% endif %}"
+         href="/billing/staff/reports/">Reports</a>
+
+    {% endwith %}
+  </div>
+</div>

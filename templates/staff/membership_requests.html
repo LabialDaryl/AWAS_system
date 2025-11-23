@@ -1,0 +1,23 @@
+{% extends 'staff/base_staff.html' %}
+{% block staff_content %}
+<h2>Membership Requests</h2>
+<table class="table table-striped mt-3">
+  <thead><tr><th>Name</th><th>Email</th><th>Purok</th><th>Status</th><th>Action</th></tr></thead>
+  <tbody>
+    {% for r in requests %}
+      <tr>
+        <td>{{ r.full_name }}</td>
+        <td>{{ r.email }}</td>
+        <td>{{ r.purok_number }}</td>
+        <td>{{ r.get_status_display }}</td>
+        <td>
+          <a class="btn btn-sm btn-success" href="/billing/staff/membership-requests/{{ r.id }}/approve/">Approve</a>
+          <a class="btn btn-sm btn-danger" href="/billing/staff/membership-requests/{{ r.id }}/reject/">Reject</a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5" class="text-center">No requests.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

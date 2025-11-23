@@ -1,0 +1,22 @@
+{% extends 'staff/base_staff.html' %}
+{% block staff_content %}
+<h2>Water Updates</h2>
+<a class="btn btn-primary mb-3" href="/billing/staff/water-updates/create/">Create Update</a>
+<ul class="list-group">
+  {% for u in updates %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <div>
+        <span class="badge bg-info text-dark me-2">{{ u.update_type }}</span>
+        {% if u.title %}<strong>{{ u.title }}</strong>{% endif %}
+        <div class="small text-muted">Priority: {{ u.get_priority_display }}</div>
+      </div>
+      <div>
+        <a class="btn btn-sm btn-secondary" href="/billing/staff/water-updates/{{ u.id }}/edit/">Edit</a>
+        <a class="btn btn-sm btn-outline-danger" href="/billing/staff/water-updates/{{ u.id }}/delete/">Delete</a>
+      </div>
+    </li>
+  {% empty %}
+    <li class="list-group-item">No updates.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

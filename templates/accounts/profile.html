@@ -1,0 +1,12 @@
+{% extends 'customer/base_customer.html' %}
+{% block customer_content %}
+<h2>My Profile</h2>
+<div class="card p-4 shadow-sm mt-3">
+  <p><strong>Name:</strong> {{ user.get_full_name }}</p>
+  <p><strong>Username:</strong> {{ user.username }}</p>
+  <p><strong>Email:</strong> {{ user.email }}</p>
+  <p><strong>Purok:</strong> {{ user.purok_number }}</p>
+  <p><strong>Water Meter ID:</strong> {{ user.water_meter_id|default:'—' }}</p>
+  <a class="btn btn-outline-primary" href="/accounts/profile/edit/">Edit Profile</a>
+</div>
+{% endblock %}

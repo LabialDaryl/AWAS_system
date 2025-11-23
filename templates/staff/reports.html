@@ -1,0 +1,68 @@
+{% extends 'staff/base_staff.html' %}
+{% block staff_content %}
+<h2>Reports</h2>
+
+<form method="get" class="card p-3 mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-sm-4">
+      <label class="form-label">Month</label>
+      <input type="month" class="form-control" name="month" value="{{ month_filter }}">
+    </div>
+    <div class="col-sm-4">
+      <label class="form-label">Purok</label>
+      <select name="purok" class="form-select">
+        <option value="" {% if not purok_filter %}selected{% endif %}>All Puroks</option>
+        {% for p in "12345678" %}
+          <option value="{{ p }}" {% if purok_filter == p %}selected{% endif %}>Purok {{ p }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-sm-4">
+      <button class="btn btn-primary" type="submit">Apply</button>
+      <a class="btn btn-outline-secondary" href="/billing/staff/reports/">Reset</a>
+      <a class="btn btn-outline-success" href="{{ export_url }}">Export CSV</a>
+    </div>
+  </div>
+</form>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-3"><div class="card text-center p-3"><div>Total Billed</div><h4>₱{{ total_billed }}</h4></div></div>
+  <div class="col-md-3"><div class="card text-center p-3"><div>Total Paid</div><h4>₱{{ total_paid }}</h4></div></div>
+  <div class="col-md-3"><div class="card text-center p-3"><div>Paid Bills</div><h4>{{ paid_count }}</h4></div></div>
+  <div class="col-md-3"><div class="card text-center p-3"><div>Unpaid Bills</div><h4>{{ unpaid_count }}</h4></div></div>
+</div>
+
+<div class="card">
+  <div class="card-header">Per-Purok Breakdown ({{ report_month|date:'F Y' }})</div>
+  <div class="table-responsive">
+    <table class="table table-striped mb-0">
+      <thead>
+        <tr>
+          <th>Purok</th>
+          <th>Total Billed</th>
+          <th>Total Paid</th>
+          <th>Paid Bills</th>
+          <th>Unpaid Bills</th>
+          <th>With Bill</th>
+          <th>Without Bill</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in purok_stats %}
+          <tr>
+            <td>Purok {{ s.purok }}</td>
+            <td>₱{{ s.total_billed }}</td>
+            <td>₱{{ s.total_paid }}</td>
+            <td><span class="badge bg-success">{{ s.paid_bills }}</span></td>
+            <td><span class="badge bg-warning text-dark">{{ s.unpaid_bills }}</span></td>
+            <td><span class="badge bg-primary">{{ s.with_bill }}</span></td>
+            <td><span class="badge bg-secondary">{{ s.without_bill }}</span></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-center">No data.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

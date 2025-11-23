@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+{% if user.is_authenticated and user.user_type == 'customer' %}
+  <div class="row g-3">
+    <aside class="col-md-3">
+      {% include 'customer/_sidebar.html' %}
+    </aside>
+    <section class="col-md-9">
+      <h2>Water Updates</h2>
+      <ul class="list-group mt-3">
+        {% for u in updates %}
+          <li class="list-group-item">
+            <span class="badge bg-info text-dark me-2">{{ u.update_type|default:u.title }}</span>
+            {% if u.title %}<strong>{{ u.title }}</strong><br/>{% endif %}
+            <div class="small text-muted">{{ u.posted_at|date:'M d, Y' }} • Priority: {{ u.get_priority_display }}</div>
+            <p class="mb-0 mt-2">{{ u.content }}</p>
+          </li>
+        {% empty %}
+          <li class="list-group-item">No updates available.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+{% else %}
+  <h2>Water Updates</h2>
+  <ul class="list-group mt-3">
+    {% for u in updates %}
+      <li class="list-group-item">
+        <span class="badge bg-info text-dark me-2">{{ u.update_type|default:u.title }}</span>
+        {% if u.title %}<strong>{{ u.title }}</strong><br/>{% endif %}
+        <div class="small text-muted">{{ u.posted_at|date:'M d, Y' }} • Priority: {{ u.get_priority_display }}</div>
+        <p class="mb-0 mt-2">{{ u.content }}</p>
+      </li>
+    {% empty %}
+      <li class="list-group-item">No updates available.</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+{% endblock %}

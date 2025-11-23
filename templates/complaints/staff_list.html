@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>All Complaints</h2>
+<ul class="list-group">
+  {% for c in complaints %}
+    <li class="list-group-item d-flex justify-content-between">
+      <span><strong>{{ c.subject }}</strong> — {{ c.customer.get_full_name }} ({{ c.get_status_display }})</span>
+      <a class="btn btn-sm btn-outline-secondary" href="/complaints/staff/{{ c.id }}/respond/">Respond</a>
+    </li>
+  {% empty %}
+    <li class="list-group-item">No complaints.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'customer/base_customer.html' %}
+{% block customer_content %}
+<h2>My Bills</h2>
+<table class="table table-striped mt-3">
+  <thead>
+    <tr>
+      <th>Month</th><th>Consumption (cu.m)</th><th>Total</th><th>Status</th><th>Action</th><th>Payment</th>
+    </tr>
+    </tr>
+  </thead>
+  <tbody>
+    {% for b in bills %}
+      <tr>
+        <td>{{ b.billing_month|date:'F Y' }}</td>
+        <td>{{ b.water_consumption }}</td>
+        <td>₱{{ b.total_amount }}</td>
+        <td>{{ b.get_payment_status_display }}</td>
+        <td>
+          <a class="btn btn-sm btn-secondary" href="/billing/customer/bill/{{ b.id }}/">Details</a>
+        </td>
+        <td><a class="btn btn-sm btn-success" href="/payments/pay/{{ b.id }}/">Pay</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6" class="text-center">No bills found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

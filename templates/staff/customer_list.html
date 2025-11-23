@@ -1,0 +1,58 @@
+{% extends 'staff/base_staff.html' %}
+{% block staff_content %}
+<h2>Customers</h2>
+
+<form method="get" class="row g-2 align-items-end mt-2 mb-3">
+  <div class="col-sm-3">
+    <label class="form-label">Purok</label>
+    <select name="purok" class="form-select">
+      <option value="">All Puroks</option>
+      {% for p in "12345678" %}
+        {% with pv=p|stringformat:"i" %}
+          <option value="{{ pv }}" {% if purok_filter == pv %}selected{% endif %}>Purok {{ pv }}</option>
+        {% endwith %}
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-sm-3">
+    <label class="form-label">Status</label>
+    <select name="status" class="form-select">
+      <option value="" {% if not status_filter %}selected{% endif %}>All</option>
+      <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+      <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspended</option>
+    </select>
+  </div>
+  <div class="col-sm-3">
+    <label class="form-label">Bill (Current Month)</label>
+    <select name="bill" class="form-select">
+      <option value="" {% if not bill_filter %}selected{% endif %}>All</option>
+      <option value="this_month_with" {% if bill_filter == 'this_month_with' %}selected{% endif %}>With Bill</option>
+      <option value="this_month_without" {% if bill_filter == 'this_month_without' %}selected{% endif %}>Without Bill</option>
+    </select>
+  </div>
+  <div class="col-sm-3">
+    <button class="btn btn-primary" type="submit">Filter</button>
+    <a class="btn btn-outline-secondary" href="/billing/staff/customers/">Reset</a>
+  </div>
+  <div class="col-12 small text-muted mt-1">
+    Showing {{ customers|length }} result(s)
+  </div>
+  <hr class="mt-3"/>
+</form>
+
+<table class="table table-striped mt-3">
+  <thead><tr><th>Name</th><th>Purok</th><th>Status</th><th>Action</th></tr></thead>
+  <tbody>
+    {% for c in customers %}
+      <tr>
+        <td>{{ c.get_full_name }}</td>
+        <td>{{ c.purok_number }}</td>
+        <td>{% if c.is_suspended %}<span class="badge bg-danger">Suspended</span>{% else %}<span class="badge bg-success">Active</span>{% endif %}</td>
+        <td><a class="btn btn-sm btn-secondary" href="/billing/staff/customers/{{ c.id }}/">View</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="4" class="text-center">No customers found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

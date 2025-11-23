@@ -1,0 +1,23 @@
+{% extends 'customer/base_customer.html' %}
+{% block customer_content %}
+<h2>{{ complaint.subject }}</h2>
+<p><strong>Type:</strong> {{ complaint.get_type_display }} | <strong>Status:</strong> {{ complaint.get_status_display }}</p>
+<p>{{ complaint.description }}</p>
+<hr/>
+<h5>Comments</h5>
+<ul class="list-group mb-3">
+  {% for cm in complaint.comments.all %}
+    <li class="list-group-item">
+      <strong>{{ cm.user.get_full_name }}</strong> <small class="text-muted">{{ cm.created_at|date:'M d, Y H:i' }}</small>
+      <div>{{ cm.comment }}</div>
+    </li>
+  {% empty %}
+    <li class="list-group-item">No comments yet.</li>
+  {% endfor %}
+</ul>
+<form method="post" action="/complaints/{{ complaint.id }}/comment/">
+  {% csrf_token %}
+  {{ comment_form.comment }}
+  <button class="btn btn-primary mt-2" type="submit">Add Comment</button>
+</form>
+{% endblock %}

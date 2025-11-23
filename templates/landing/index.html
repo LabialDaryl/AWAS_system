@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="container">
+    <div class="row align-items-center min-vh-75">
+      <div class="col-lg-6">
+        <div class="hero-content">
+          <h1 class="display-3 fw-bold mb-4">
+            <span class="text-gradient">Adlay Water Augmentation System</span><br>
+            <span class="text-dark"></span>
+          </h1>
+          <p class="lead mb-4 text-gray-600">
+            Modern water billing and management system for Barangay Adlay. 
+            Pay online, track usage, and stay connected with your water service.
+          </p>
+          <div class="d-flex flex-wrap gap-3 mb-5">
+            <a href="/connection-request/" class="btn btn-primary btn-lg">
+              <i class="fas fa-plus-circle me-2"></i>Get Connected
+            </a>
+            <a href="/accounts/login/" class="btn btn-outline-primary btn-lg">
+              <i class="fas fa-sign-in-alt me-2"></i>Customer Login
+            </a>
+          </div>
+          <div class="row g-4">
+            <div class="col-4">
+              <div class="text-center">
+                <h3 class="fw-bold text-primary mb-1">8</h3>
+                <small class="text-gray-500">Puroks Served</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="text-center">
+                <h3 class="fw-bold text-primary mb-1">500+</h3>
+                <small class="text-gray-500">Active Customers</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="text-center">
+                <h3 class="fw-bold text-primary mb-1">24/7</h3>
+                <small class="text-gray-500">Online Access</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="hero-visual text-center">
+          <div class="water-animation mb-4">
+            <div class="water-drop water-drop-1"></div>
+            <div class="water-drop water-drop-2"></div>
+            <div class="water-drop water-drop-3"></div>
+            <div class="water-drop water-drop-4"></div>
+            <div class="water-drop water-drop-5"></div>
+          </div>
+          <div class="hero-card bg-white shadow-lg rounded-4 p-5">
+            <div class="water-icon mb-3">
+              <i class="fas fa-tint"></i>
+            </div>
+            <h4 class="fw-semibold text-gray-800 mb-2">Clean Water For Adlayanon</h4>
+            <p class="text-gray-600 mb-0">Reliable water supply for our community</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5 bg-white">
+  <div class="container">
+    <div class="row mb-5">
+      <div class="col-lg-8 mx-auto text-center">
+        <h2 class="display-5 fw-bold mb-3 text-gray-800">Our Services</h2>
+        <p class="lead text-gray-600">
+          Comprehensive water management solutions designed for our community
+        </p>
+      </div>
+    </div>
+    
+    <div class="row g-4">
+      <div class="col-lg-4 col-md-6">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <h4 class="feature-title">For Customers</h4>
+          <p class="feature-description">
+            View bills, pay online, track consumption, and manage your water account 
+            with our user-friendly platform.
+          </p>
+          <a href="/accounts/login/" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-right me-1"></i>Access Portal
+          </a>
+        </div>
+      </div>
+      
+      <div class="col-lg-4 col-md-6">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-cogs"></i>
+          </div>
+          <h4 class="feature-title">For Staff</h4>
+          <p class="feature-description">
+            Create bills, manage accounts, monitor payments, and track system status 
+            with comprehensive administrative tools.
+          </p>
+          <a href="/accounts/staff-login/" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-right me-1"></i>Staff Portal
+          </a>
+        </div>
+      </div>
+      
+      <div class="col-lg-4 col-md-6">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-bullhorn"></i>
+          </div>
+          <h4 class="feature-title">Announcements</h4>
+          <p class="feature-description">
+            Stay updated with maintenance schedules, service notifications, 
+            and important community announcements.
+          </p>
+          <a href="/billing/water-updates/" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-right me-1"></i>View Updates
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Benefits Section -->
+<section class="py-5" style="background: var(--water-gradient-light);">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-6">
+        <div class="benefits-content">
+          <h2 class="display-6 fw-bold mb-4 text-gray-800">Why Choose AWAS?</h2>
+          <div class="benefit-item d-flex mb-4">
+            <div class="benefit-icon me-3">
+              <i class="fas fa-shield-alt text-primary"></i>
+            </div>
+            <div>
+              <h5 class="fw-semibold mb-2 text-gray-800">Secure & Reliable</h5>
+              <p class="text-gray-600 mb-0">Bank-level security for all transactions and data protection.</p>
+            </div>
+          </div>
+          <div class="benefit-item d-flex mb-4">
+            <div class="benefit-icon me-3">
+              <i class="fas fa-mobile-alt text-primary"></i>
+            </div>
+            <div>
+              <h5 class="fw-semibold mb-2 text-gray-800">Mobile Friendly</h5>
+              <p class="text-gray-600 mb-0">Access your account and make payments from any device.</p>
+            </div>
+          </div>
+          <div class="benefit-item d-flex mb-4">
+            <div class="benefit-icon me-3">
+              <i class="fas fa-clock text-primary"></i>
+            </div>
+            <div>
+              <h5 class="fw-semibold mb-2 text-gray-800">24/7 Availability</h5>
+              <p class="text-gray-600 mb-0">Round-the-clock access to your water account and services.</p>
+            </div>
+          </div>
+          <div class="benefit-item d-flex">
+            <div class="benefit-icon me-3">
+              <i class="fas fa-headset text-primary"></i>
+            </div>
+            <div>
+              <h5 class="fw-semibold mb-2 text-gray-800">Customer Support</h5>
+              <p class="text-gray-600 mb-0">Dedicated support team to assist with any inquiries.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="benefits-visual text-center">
+          <div class="benefits-card bg-white shadow-lg rounded-4 p-5">
+            <div class="row g-4">
+              <div class="col-6">
+                <div class="benefit-stat">
+                  <i class="fas fa-check-circle text-success mb-2" style="font-size: 2rem;"></i>
+                  <h6 class="fw-semibold text-gray-800">Easy Payments</h6>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="benefit-stat">
+                  <i class="fas fa-chart-line text-info mb-2" style="font-size: 2rem;"></i>
+                  <h6 class="fw-semibold text-gray-800">Usage Tracking</h6>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="benefit-stat">
+                  <i class="fas fa-bell text-warning mb-2" style="font-size: 2rem;"></i>
+                  <h6 class="fw-semibold text-gray-800">Notifications</h6>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="benefit-stat">
+                  <i class="fas fa-file-invoice text-primary mb-2" style="font-size: 2rem;"></i>
+                  <h6 class="fw-semibold text-gray-800">Digital Bills</h6>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5 bg-gradient-primary text-white">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-8">
+        <h3 class="fw-bold mb-3" style="color: white;">Ready to Get Started?</h3>
+        <p class="mb-0 lead opacity-90">
+          Join hundreds of satisfied customers who trust AWAS for their water management needs.
+        </p>
+      </div>
+      <div class="col-lg-4 text-lg-end">
+        <a href="/connection-request/" class="btn btn-light btn-lg">
+          <i class="fas fa-rocket me-2"></i>Get Connected Today
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Additional CSS for animations -->
+<style>
+.water-animation {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.water-drop {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, #0d6efd, #0b5fa5);
+  border-radius: 50%;
+  animation: waterDrop 4s infinite ease-in-out;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.water-drop-1 { top: 15%; left: 20%; animation-delay: 0s; }
+.water-drop-2 { top: 35%; left: 60%; animation-delay: 0.8s; }
+.water-drop-3 { top: 55%; left: 30%; animation-delay: 1.6s; }
+.water-drop-4 { top: 75%; left: 70%; animation-delay: 2.4s; }
+.water-drop-5 { top: 25%; left: 80%; animation-delay: 3.2s; }
+
+@keyframes waterDrop {
+  0%, 100% { 
+    transform: translateY(0) scale(1); 
+    opacity: 0.8; 
+  }
+  50% { 
+    transform: translateY(-30px) scale(1.2); 
+    opacity: 1; 
+  }
+}
+
+.water-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #0d6efd, #0b5fa5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  color: var(--white);
+  font-size: 2.5rem;
+  box-shadow: 0 8px 20px rgba(13, 110, 253, 0.3);
+}
+
+.benefit-icon {
+  width: 50px;
+  height: 50px;
+  background: var(--primary-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.benefit-stat {
+  text-align: center;
+  padding: 1rem;
+}
+
+.min-vh-75 {
+  min-height: 75vh;
+}
+
+.rounded-4 {
+  border-radius: 1rem !important;
+}
+
+.opacity-90 {
+  opacity: 0.9 !important;
+}
+
+@media (max-width: 768px) {
+  .hero-section {
+    text-align: center;
+  }
+  
+  .benefits-visual {
+    margin-top: 3rem;
+  }
+  
+  .water-animation {
+    height: 150px;
+  }
+  
+  .water-drop {
+    width: 20px;
+    height: 20px;
+  }
+}
+</style>
+
+{% endblock %}
