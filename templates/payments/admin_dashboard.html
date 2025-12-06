@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>Payment Analytics Dashboard</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Date Range Filter -->
+                    <form method="get" class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">From Date</label>
+                                <input type="date" name="from_date" class="form-control" value="{{ from_date }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">To Date</label>
+                                <input type="date" name="to_date" class="form-control" value="{{ to_date }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">&nbsp;</label>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-filter me-2"></i>Filter
+                                    </button>
+                                    <a href="{% url 'payments:admin_dashboard' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>Clear
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Statistics Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h6>Total Revenue</h6>
+                                    <h3>₱{{ revenue_stats.total_revenue|default:0|floatformat:2 }}</h3>
+                                    <small>{{ revenue_stats.total_count|default:0 }} transactions</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-danger text-white">
+                                <div class="card-body">
+                                    <h6>Failed Payments</h6>
+                                    <h3>{{ failed_payments }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body">
+                                    <h6>Refund Requests</h6>
+                                    <h3>{{ refund_stats.requested }}</h3>
+                                    <small>{{ refund_stats.approved }} approved</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <h6>Flagged Payments</h6>
+                                    <h3>{{ flagged_count }}</h3>
+                                    <small>{{ disputed_count }} disputed</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Revenue Trend (Last 30 Days)</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="revenueChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Payment Status Breakdown</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="statusChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Payment Method Distribution</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="methodChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Refund Statistics</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table">
+                                        <tr>
+                                            <th>Requested:</th>
+                                            <td>{{ refund_stats.requested }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Approved:</th>
+                                            <td>{{ refund_stats.approved }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Total Refunded:</th>
+                                            <td class="fw-bold">₱{{ refund_stats.total_refunded|floatformat:2 }}</td>
+                                        </tr>
+                                    </table>
+                                    <a href="{% url 'payments:audit_logs' %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-list me-2"></i>View Audit Logs
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Revenue Trend Chart
+    const revenueData = {{ daily_revenue|safe }};
+    const revenueLabels = revenueData.map(item => {
+        const date = new Date(item.date);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+    const revenueValues = revenueData.map(item => parseFloat(item.revenue || 0));
+    
+    new Chart(document.getElementById('revenueChart'), {
+        type: 'line',
+        data: {
+            labels: revenueLabels,
+            datasets: [{
+                label: 'Daily Revenue (₱)',
+                data: revenueValues,
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₱' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Status Breakdown Chart
+    const statusData = {{ status_breakdown_json|safe }};
+    const statusLabels = statusData.map(item => item.payment_status || 'Unknown');
+    const statusCounts = statusData.map(item => item.count || 0);
+    
+    new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                data: statusCounts,
+                backgroundColor: [
+                    'rgb(255, 99, 132)',
+                    'rgb(54, 162, 235)',
+                    'rgb(255, 205, 86)',
+                    'rgb(75, 192, 192)',
+                    'rgb(153, 102, 255)',
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // Payment Method Chart
+    const methodData = {{ method_breakdown_json|safe }};
+    const methodLabels = methodData.map(item => item.payment_method || 'Unknown');
+    const methodCounts = methodData.map(item => item.count || 0);
+    
+    new Chart(document.getElementById('methodChart'), {
+        type: 'bar',
+        data: {
+            labels: methodLabels,
+            datasets: [{
+                label: 'Number of Payments',
+                data: methodCounts,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+

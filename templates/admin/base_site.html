@@ -1,0 +1,37 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{# Override Jazzmin's user profile dropdown to include a dark mode toggle
+   alongside "Change password" and "Log out". #}
+{% block userlinks %}
+    <li class="nav-item dropdown user-menu">
+        <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">
+            <img src="{% static 'jazzmin/img/default.jpg' %}" class="user-image img-circle elevation-2" alt="User Image">
+            <span class="d-none d-md-inline">{{ request.user.get_username }}</span>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+            <li class="user-footer d-flex justify-content-between flex-wrap">
+                <a href="{% url 'admin:password_change' %}" class="btn btn-default btn-flat mb-2 mb-sm-0">
+                    Change password
+                </a>
+
+                <a href="#"
+                   id="theme-toggle"
+                   class="btn btn-default btn-flat mb-2 mb-sm-0"
+                   role="button"
+                   aria-label="Toggle dark mode"
+                   data-theme="light">
+                    <i class="fas fa-moon"></i>
+                    <span id="theme-toggle-label">Dark mode</span>
+                </a>
+
+                <a href="{% url 'admin:logout' %}" class="btn btn-default btn-flat mb-2 mb-sm-0">
+                    Log out
+                </a>
+            </li>
+        </ul>
+    </li>
+{% endblock %}
+
+
+

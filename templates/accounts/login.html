@@ -4,27 +4,47 @@
 {% block extra_css %}
 <style>
   body {
-    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6));
-    background-image: url('{% static "/images/bg.jpg" %}');
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-attachment: fixed;
-    background-size: cover;
     min-height: 100vh;
     display: flex;
     align-items: center;
     margin: 0;
     padding: 0;
+    position: relative;
   }
   
+  .background-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('{% static "images/customer_login_bg.jpg" %}');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-attachment: fixed;
+    background-size: cover;
+    z-index: -1;
+  }
+  
+  .background-overlay::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6));
+  }
   
   .login-container {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.98);
     border-radius: 0.5rem;
-    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(2px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     margin: 20px 0;
+    position: relative;
+    z-index: 1;
   }
   
   .form-control, .input-group-text {
@@ -40,13 +60,13 @@
   
   /* Fix for the background in different browsers */
   @supports (-webkit-touch-callout: none) {
-    body {
+    .background-overlay {
       background-attachment: scroll;
     }
   }
   
   @supports not (-webkit-touch-callout: none) {
-    body {
+    .background-overlay {
       background-attachment: fixed;
     }
   }
@@ -54,13 +74,16 @@
 {% endblock %}
 
 {% block content %}
-<div class="container py-5">
+<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background-image: url('{% static "images/customer_login_bg.jpg" %}'); background-repeat: no-repeat; background-position: center center; background-attachment: fixed; background-size: cover; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;">
+  <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3));"></div>
+</div>
+<div class="container py-5" style="position: relative; z-index: 1;">
   <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
       <div class="login-container p-4 p-md-5">
         <div class="text-center mb-4">
-          <h2 class="h3 text-primary mb-2">Welcome Back</h2>
-          <p class="text-muted">Please sign in to your account</p>
+          <h2 class="h3 mb-2" style="color: #ffffff; font-weight: 900; font-size: 3rem;">Welcome Back</h2>
+          <p style="color: #93c4f6; font-weight: 500; font-size: 1.5rem;">Please sign in to your account</p>
         </div>
 
           {% if form.non_field_errors %}
@@ -75,7 +98,7 @@
             {% csrf_token %}
             
             <div class="mb-4">
-              <label for="username" class="form-label fw-medium">Username</label>
+              <label for="username" class="form-label fw-medium" style="color: #ffffff;">Username</label>
               <div class="input-group">
                 <span class="input-group-text">
                   <i class="fas fa-user text-muted"></i>
@@ -98,8 +121,8 @@
 
             <div class="mb-4">
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <label for="password" class="form-label fw-medium">Password</label>
-                <a href="#" class="small text-decoration-none">Forgot password?</a>
+                <label for="password" class="form-label fw-medium" style="color: #ffffff;">Password</label>
+                <a href="#" class="small text-decoration-underline" style="color: #fcfdff;">Forgot password?</a>
               </div>
               <div class="input-group">
                 <span class="input-group-text">
@@ -121,7 +144,7 @@
 
             <div class="form-check mb-4">
               <input class="form-check-input" type="checkbox" id="remember" name="remember">
-              <label class="form-check-label" for="remember">
+              <label class="form-check-label" for="remember" style="color: #ffffff;">
                 Remember me
               </label>
             </div>
@@ -133,8 +156,8 @@
             </div>
 
             <div class="text-center pt-3 border-top">
-              <p class="mb-0 text-muted">Don't have an account? 
-                <a href="{% url 'accounts:register' %}" class="text-primary fw-medium text-decoration-none">Create one</a>
+              <p class="mb-0" style="color: #ffffff;">Don't have an account? 
+                <a href="{% url 'accounts:register' %}" class="fw-medium text-decoration-underline" style="color: #fcfdff;">Create one</a>
               </p>
             </div>
           </form>

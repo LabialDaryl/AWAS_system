@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-check-circle me-2"></i>Approve Refund</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Review the refund request below. Approving will process the refund through the payment gateway.
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Payment Details</h5>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th>Reference Number:</th>
+                                <td>{{ payment.reference_number }}</td>
+                            </tr>
+                            <tr>
+                                <th>Customer:</th>
+                                <td>{{ payment.customer.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Original Amount:</th>
+                                <td>₱{{ payment.amount|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <th>Refund Amount:</th>
+                                <td class="fw-bold text-danger">₱{{ payment.refund_amount|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <th>Requested By:</th>
+                                <td>{{ payment.refund_requested_by.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Requested At:</th>
+                                <td>{{ payment.refund_requested_at|date:"F d, Y h:i A" }}</td>
+                            </tr>
+                            {% if payment.transaction_id %}
+                            <tr>
+                                <th>Transaction ID:</th>
+                                <td>{{ payment.transaction_id }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('Approve and process this refund? This action cannot be undone.')">
+                                <i class="fas fa-check me-2"></i>Approve & Process Refund
+                            </button>
+                            <a href="{% url 'payments:reject_refund' payment.id %}" class="btn btn-danger">
+                                <i class="fas fa-times me-2"></i>Reject Refund Request
+                            </a>
+                            <a href="{% url 'payments:admin_dashboard' %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

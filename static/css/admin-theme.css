@@ -1,0 +1,107 @@
+/* Light mode hook – optional, but useful for targeting */
+body.jazzmin-light-mode {
+    /* You can add light-specific tweaks here if needed */
+}
+
+/* Dark mode base */
+body.jazzmin-dark-mode {
+    background-color: #0f172a; /* slate-900 */
+    color: #e2e8f0;
+}
+
+/* Main content areas */
+body.jazzmin-dark-mode .content-wrapper,
+body.jazzmin-dark-mode .content,
+body.jazzmin-dark-mode .card,
+body.jazzmin-dark-mode .box {
+    background-color: #1e2533;
+    color: #e2e8f0;
+    border-color: #2f3545;
+}
+
+/* Sidebar and navbar */
+body.jazzmin-dark-mode .main-header.navbar,
+body.jazzmin-dark-mode .main-sidebar {
+    background-color: #111a2c;
+    color: #e2e8f0;
+}
+
+body.jazzmin-dark-mode .main-header .nav-link,
+body.jazzmin-dark-mode .main-sidebar .nav-link {
+    color: #cbd5f5;
+}
+
+body.jazzmin-dark-mode .main-header .nav-link:hover,
+body.jazzmin-dark-mode .main-sidebar .nav-link:hover {
+    color: #f8fafc;
+    background-color: rgba(148, 163, 184, 0.15);
+}
+
+/* Links */
+body.jazzmin-dark-mode a,
+body.jazzmin-dark-mode .nav-link {
+    color: #38bdf8;
+}
+
+body.jazzmin-dark-mode a:hover,
+body.jazzmin-dark-mode .nav-link:hover {
+    color: #7dd3fc;
+}
+
+/* Tables */
+body.jazzmin-dark-mode table,
+body.jazzmin-dark-mode table th,
+body.jazzmin-dark-mode table td {
+    background-color: #111a2c;
+    color: #6a4bf6;
+    border-color: #2f3545;
+}
+
+/* Forms / inputs */
+body.jazzmin-dark-mode .form-control,
+body.jazzmin-dark-mode select,
+body.jazzmin-dark-mode textarea {
+    background-color: #121b2d;
+    color: #f8fafc;
+    border-color: #334155;
+}
+
+body.jazzmin-dark-mode .form-control:focus,
+body.jazzmin-dark-mode select:focus,
+body.jazzmin-dark-mode textarea:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 0.15rem rgba(56, 189, 248, 0.35);
+}
+
+/* Buttons */
+body.jazzmin-dark-mode .btn-default,
+body.jazzmin-dark-mode .btn-secondary,
+body.jazzmin-dark-mode .btn-outline-secondary {
+    background-color: #273043;
+    color: #f8fafc;
+    border-color: #3a4256;
+}
+
+body.jazzmin-dark-mode .btn-default:hover,
+body.jazzmin-dark-mode .btn-secondary:hover,
+body.jazzmin-dark-mode .btn-outline-secondary:hover {
+    background-color: #3a4256;
+    border-color: #475066;
+}
+
+/* Alerts */
+body.jazzmin-dark-mode .alert {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border-color: #334155;
+}
+
+/* Login screen */
+body.jazzmin-dark-mode.login-page,
+body.jazzmin-dark-mode .login-box,
+body.jazzmin-dark-mode .login-card-body {
+    background-color: #0f172a;
+    color: #e2e8f0;
+}
+
+

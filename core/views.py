@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
+from django.views.decorators.http import require_http_methods
+from notifications.models import Notification
 from .forms import ConnectionRequestForm
 from billing.models import WaterUpdate
 
@@ -62,73 +64,57 @@ def contact(request):
 
 
 @login_required
+@require_http_methods(["POST"])
 def mark_notifications_viewed(request):
-    """Mark notifications as viewed by storing a timestamp in the session.
-    The badge count will be zeroed until newer notifications exist.
     """
-    # Accept GET or POST for simplicity
-    request.session['notifications_cleared_at'] = timezone.now().isoformat()
-    request.session.modified = True
-    return JsonResponse({'ok': True})
+    Backwards-compatible endpoint to mark all notifications as viewed.
+    
+    Kept for older frontend code that may still call /notifications/mark-viewed/.
+    It simply delegates to mark_all_notifications_read so behavior stays consistent.
+    """
+    return mark_all_notifications_read(request)
 
 
 @login_required
+@require_http_methods(["POST"])
 def mark_notification_read(request):
-    """Mark a single notification as read by ID (session-based)."""
-    notif_id = request.GET.get('id')
-    if not notif_id:
-        return JsonResponse({'ok': False, 'error': 'missing id'}, status=400)
-    read_ids = set(request.session.get('notifications_read_ids', []))
-    read_ids.add(notif_id)
-    request.session['notifications_read_ids'] = list(read_ids)
-    request.session.modified = True
-    return JsonResponse({'ok': True})
+    """Mark a single notification as read in the database."""
+    notification_id = request.GET.get('id')
+    if not notification_id:
+        return JsonResponse({'ok': False, 'error': 'Missing notification ID'}, status=400)
+
+    try:
+        # Get the notification and verify ownership
+        notification = Notification.objects.get(
+            id=notification_id,
+            recipient=request.user,
+            unread=True
+        )
+        notification.mark_as_read()
+        return JsonResponse({
+            'ok': True,
+            'remaining': Notification.objects.filter(recipient=request.user, unread=True).count()
+        })
+    except Notification.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Notification not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'ok': False, 'error': str(e)}, status=500)
 
 
 @login_required
+@require_http_methods(["POST"])
 def mark_all_notifications_read(request):
-    """Mark all current notifications as read for the logged-in customer."""
-    user = request.user
-    if not getattr(user, 'is_customer', False):
-        # Staff have no badge; no-op
-        request.session['notifications_read_ids'] = []
-        request.session.modified = True
-        return JsonResponse({'ok': True})
-
-    # Build current notification IDs (mirror context processor logic)
-    from datetime import timedelta
-    from django.conf import settings
-    from billing.models import Bill, WaterUpdate
-
-    now = timezone.now().date()
-    days_before_due = getattr(settings, 'NOTIFICATION_DAYS_BEFORE_DUE', 5)
-
-    ids = []
-    for bill in Bill.objects.filter(customer=user, payment_status='unpaid')[:5]:
-        ids.append(f"bill:{bill.id}:unpaid")
-
-    due_soon_qs = Bill.objects.filter(
-        customer=user,
-        payment_status__in=['unpaid', 'partially_paid'],
-        due_date__gt=now,
-        due_date__lte=now + timedelta(days=days_before_due)
-    )
-    for bill in due_soon_qs[:5]:
-        ids.append(f"bill:{bill.id}:due")
-
-    updates_qs = WaterUpdate.objects.filter(is_active=True).order_by('-posted_at')[:10]
-    user_purok = getattr(user, 'purok_number', None)
-    for upd in updates_qs:
-        target_ok = True
-        if upd.target_puroks:
-            try:
-                targets = [int(p.strip()) for p in upd.target_puroks.split(',') if p.strip().isdigit()]
-            except Exception:
-                targets = []
-            target_ok = bool(user_purok and user_purok in targets)
-        if target_ok:
-            ids.append(f"update:{upd.id}")
-
-    request.session['notifications_read_ids'] = list(set(ids))
-    request.session.modified = True
-    return JsonResponse({'ok': True})
+    """Mark all unread notifications as read for the current user."""
+    try:
+        # Mark all unread notifications as read
+        updated = Notification.objects.filter(
+            recipient=request.user,
+            unread=True
+        ).update(unread=False)
+        
+        return JsonResponse({
+            'ok': True,
+            'count': updated
+        })
+    except Exception as e:
+        return JsonResponse({'ok': False, 'error': str(e)}, status=500)

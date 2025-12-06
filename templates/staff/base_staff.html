@@ -1,11 +1,42 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<div class="row g-3">
-  <aside class="col-md-3">
-    {% include 'staff/_sidebar.html' %}
-  </aside>
-  <section class="col-md-9">
+<div class="dashboard-shell staff-dashboard">
+  <!-- Sidebar -->
+  <div class="dashboard-sidebar">
+    <div class="collapse d-md-block" id="staffSidebar">
+      <div class="dashboard-sidebar-card">
+        {% include 'staff/_sidebar.html' %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Main scrollable content -->
+  <section class="dashboard-content">
+    <!-- Mobile sidebar toggle -->
+    <button
+      class="btn btn-outline-primary w-100 d-md-none mb-3 sidebar-toggle-btn"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#staffSidebar"
+      aria-expanded="false"
+      aria-controls="staffSidebar"
+    >
+      <i class="fas fa-bars me-2"></i>
+      Staff Menu
+    </button>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
     {% block staff_content %}{% endblock %}
   </section>
 </div>
 {% endblock %}
+

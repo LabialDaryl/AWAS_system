@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i class="fas fa-undo me-2"></i>Request Refund</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Refund requests require admin approval. This action cannot be undone.
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Payment Details</h5>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th>Reference Number:</th>
+                                <td>{{ payment.reference_number }}</td>
+                            </tr>
+                            <tr>
+                                <th>Customer:</th>
+                                <td>{{ payment.customer.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Payment Amount:</th>
+                                <td>₱{{ payment.amount|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <th>Payment Date:</th>
+                                <td>{{ payment.payment_date|date:"F d, Y" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="refund_amount" class="form-label">Refund Amount</label>
+                            <input type="number" class="form-control" id="refund_amount" name="refund_amount" 
+                                   value="{{ payment.amount }}" step="0.01" min="0.01" max="{{ payment.amount }}" required>
+                            <small class="form-text text-muted">Maximum: ₱{{ payment.amount|floatformat:2 }}</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Reason for Refund</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="4" required></textarea>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-warning btn-lg" onclick="return confirm('Submit refund request? This requires admin approval.')">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Refund Request
+                            </button>
+                            <a href="{% url 'payments:staff_payment_list' %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

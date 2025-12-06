@@ -1,19 +1,47 @@
-<div class="card h-100">
-  <div class="card-header">Menu</div>
-  <div class="list-group list-group-flush">
+<nav class="card h-100 dashboard-sidebar-card customer-sidebar collapse d-md-block" id="customerSidebar">
+  <div class="card-header sidebar-header d-flex align-items-center">
+    <span class="sidebar-header-icon me-2">
+      <i class="fas fa-gauge-high"></i>
+    </span>
+    <span class="fw-semibold">Customer Menu</span>
+  </div>
+  <div class="list-group list-group-flush sidebar-nav">
     {% with path=request.path %}
-      <a class="list-group-item list-group-item-action{% if path == '/billing/customer/dashboard/' or path == '/billing/customer/dashboard' %} active{% endif %}"
-         href="/billing/customer/dashboard/">Dashboard</a>
-      <a class="list-group-item list-group-item-action{% if path|slice:':22' == '/billing/customer/bills' or path == '/billing/customer/bills/' %} active{% endif %}"
-         href="/billing/customer/bills/">My Bills</a>
-      <a class="list-group-item list-group-item-action{% if path|slice:':16' == '/payments/history' or path == '/payments/history/' %} active{% endif %}"
-         href="/payments/history/">Payment History</a>
-      <a class="list-group-item list-group-item-action{% if path|slice:':11' == '/complaints' or path == '/complaints/' %} active{% endif %}"
-         href="/complaints/">Complaints</a>
-      <a class="list-group-item list-group-item-action{% if path|slice:':19' == '/billing/water-updates' or path == '/billing/water-updates/' %} active{% endif %}"
-         href="/billing/water-updates/">Water Updates</a>
-      <a class="list-group-item list-group-item-action{% if path|slice:':17' == '/accounts/profile' or path == '/accounts/profile/' %} active{% endif %}"
-         href="/accounts/profile/">Profile</a>
+      <a class="list-group-item sidebar-link{% if path == '/billing/customer/dashboard/' or path == '/billing/customer/dashboard' %} active{% endif %}"
+         href="/billing/customer/dashboard/">
+        <i class="fas fa-house-chimney sidebar-link-icon"></i>
+        <span>Dashboard</span>
+      </a>
+      <a class="list-group-item sidebar-link{% if path|slice:':22' == '/billing/customer/bills' or path == '/billing/customer/bills/' %} active{% endif %}"
+         href="/billing/customer/bills/">
+        <i class="fas fa-file-invoice-dollar sidebar-link-icon"></i>
+        <span>My Bills</span>
+      </a>
+      <a class="list-group-item sidebar-link{% if path|slice:':16' == '/payments/history' or path == '/payments/history/' %} active{% endif %}"
+         href="/payments/history/">
+        <i class="fas fa-clock-rotate-left sidebar-link-icon"></i>
+        <span>Payment History</span>
+      </a>
+      <a class="list-group-item sidebar-link{% if path|slice:':11' == '/complaints' or path == '/complaints/' %} active{% endif %}"
+         href="/complaints/">
+        <i class="fas fa-comment-dots sidebar-link-icon"></i>
+        <span>Complaints</span>
+      </a>
+      <a class="list-group-item sidebar-link{% if path|slice:':19' == '/billing/water-updates' or path == '/billing/water-updates/' %} active{% endif %}"
+         href="/billing/water-updates/">
+        <i class="fas fa-droplet sidebar-link-icon"></i>
+        <span>Water Updates</span>
+      </a>
+      <a class="list-group-item sidebar-link{% if path|slice:':17' == '/accounts/profile' or path == '/accounts/profile/' %} active{% endif %}"
+         href="/accounts/profile/">
+        <i class="fas fa-user-circle sidebar-link-icon"></i>
+        <span>Profile</span>
+      </a>
+      <a class="list-group-item sidebar-link sidebar-link-accent"
+         href="/contact/">
+        <i class="fas fa-headset sidebar-link-icon"></i>
+        <span>Support</span>
+      </a>
     {% endwith %}
   </div>
-</div>
+</nav>

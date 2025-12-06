@@ -61,31 +61,58 @@
               <button class="btn p-0 bg-transparent border-0 position-relative" id="notifMenuButton" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open notifications">
                 <i class="fas fa-bell fs-5 text-secondary"></i>
                 {% if notification_count %}
-                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ notification_count }}</span>
+                  <span id="notif-badge-main" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ notification_count }}</span>
                 {% endif %}
               </button>
-              <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notifMenuButton" style="min-width: 320px;">
-                <li class="dropdown-header d-flex justify-content-between align-items-center">
-                  <span class="fw-semibold">Notifications</span>
-                  <div class="d-flex align-items-center gap-2">
-                    {% if notification_count %}<span id="notif-badge-inline" class="badge bg-primary">{{ notification_count }}</span>{% endif %}
-                    <button id="markAllReadBtn" type="button" class="btn btn-link btn-sm p-0">Mark all as read</button>
-                  </div>
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                {% if notification_items %}
-                  {% for n in notification_items %}
-                    <li>
-                      <a class="dropdown-item d-flex align-items-start notif-item" data-notif-id="{{ n.id }}" href="{{ n.url }}">
-                        <i class="{{ n.icon }} me-2 mt-1 text-muted"></i>
-                        <span class="small">{{ n.text }}</span>
+              
+              <div class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notifMenuButton">
+                <div class="notification-header d-flex justify-content-between align-items-center">
+                  <h3 class="notification-title mb-0">Notifications</h3>
+                  {% if notification_count %}
+                    <div class="d-flex align-items-center gap-2">
+                      <span id="notif-badge-inline" class="badge bg-primary">{{ notification_count }}</span>
+                      <button type="button" id="markAllReadBtn" class="mark-all-read btn btn-link btn-sm p-0" title="Mark all as read">
+                        Mark all as read
+                      </button>
+                    </div>
+                  {% endif %}
+                </div>
+                
+                <div class="notification-list">
+                  {% if notification_items %}
+                    {% for n in notification_items %}
+                      <a href="{{ n.url }}" 
+                         class="dropdown-item notification-item {% if n.unread %}unread{% endif %}" 
+                         data-notification-id="{{ n.id }}">
+                        <div class="notification-content">
+                          <div class="notification-icon">
+                            <i class="{{ n.icon }}"></i>
+                          </div>
+                          <div class="notification-details">
+                            <p class="notification-message">{{ n.text }}</p>
+                            <span class="notification-time" title="{{ n.timestamp|date:'F j, Y g:i A' }}">
+                              {{ n.timestamp|timesince }} ago
+                            </span>
+                          </div>
+                          {% if n.unread %}<span class="notification-badge-dot"></span>{% endif %}
+                        </div>
                       </a>
-                    </li>
-                  {% endfor %}
-                {% else %}
-                  <li class="px-3 py-2 text-muted small">You're all caught up.</li>
+                    {% endfor %}
+                  {% else %}
+                    <div class="notification-empty">
+                      <i class="fas fa-bell-slash"></i>
+                      <p>No new notifications</p>
+                    </div>
+                  {% endif %}
+                </div>
+                
+                {% if notification_items %}
+                  <div class="notification-actions d-flex justify-content-between align-items-center">
+                    <a href="{% url 'notifications:all' %}" class="small text-muted">View all notifications</a>
+                    <span class="text-muted small"><span id="notif-unread-count">{{ notification_count }}</span> unread</span>
+                  </div>
                 {% endif %}
-              </ul>
+              </div>
             </div>
             <span class="d-none d-md-inline text-muted small">{{ user.get_full_name|default:user.username }}</span>
             <div class="dropdown">
@@ -249,64 +276,6 @@
             crossorigin="anonymous"></script>
     <!-- Custom JS -->
     <script src="{% static 'js/main.js' %}" defer></script>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        var notifBtn = document.getElementById('notifMenuButton');
-        var badgeEl = notifBtn ? notifBtn.querySelector('.badge') : null;
-        var inlineBadge = document.getElementById('notif-badge-inline');
-        var markAllBtn = document.getElementById('markAllReadBtn');
-
-        function setBadgeCount(n) {
-          n = Math.max(0, parseInt(n || 0, 10) || 0);
-          if (badgeEl) {
-            if (n > 0) {
-              badgeEl.textContent = n;
-              badgeEl.style.display = '';
-            } else {
-              badgeEl.remove();
-              badgeEl = null;
-            }
-          }
-          if (inlineBadge) {
-            if (n > 0) {
-              inlineBadge.textContent = n;
-              inlineBadge.style.display = '';
-            } else {
-              inlineBadge.style.display = 'none';
-            }
-          }
-        }
-
-        // Decrement on single item click
-        document.querySelectorAll('.notif-item[data-notif-id]').forEach(function(a){
-          a.addEventListener('click', function(ev){
-            var id = a.getAttribute('data-notif-id');
-            if (!id) return; // fallback
-            try {
-              fetch('{% url "core:mark_notification_read" %}?id=' + encodeURIComponent(id), { credentials: 'same-origin' })
-                .then(function(){
-                  // Decrement badge visually
-                  var current = 0;
-                  if (badgeEl && badgeEl.textContent) current = parseInt(badgeEl.textContent, 10) || 0;
-                  else if (inlineBadge && inlineBadge.textContent) current = parseInt(inlineBadge.textContent, 10) || 0;
-                  setBadgeCount(current - 1);
-                })
-                .catch(function(){});
-            } catch(e) {}
-            // allow navigation to proceed
-          });
-        });
-
-        // Mark all as read
-        if (markAllBtn) {
-          markAllBtn.addEventListener('click', function(ev){
-            ev.preventDefault();
-            fetch('{% url "core:mark_all_notifications_read" %}', { credentials: 'same-origin' })
-              .then(function(){ setBadgeCount(0); })
-              .catch(function(){});
-          });
-        }
-      });
-    </script>
+    <script src="{% static 'js/notifications.js' %}" defer></script>
   </body>
 </html>

@@ -13,6 +13,8 @@ urlpatterns = [
     path('billing/', include('billing.urls')),
     path('payments/', include('payments.urls')),
     path('complaints/', include('complaints.urls')),
+    # Notifications URLs
+    path('notifications/', include('notifications.urls', namespace='notifications')),
 ]
 
 # Serve media and static files in development

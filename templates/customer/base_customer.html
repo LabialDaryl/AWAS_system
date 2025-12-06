@@ -1,11 +1,29 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<div class="row g-3">
-  <aside class="col-md-3">
+<div class="dashboard-shell customer-dashboard">
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
     {% include 'customer/_sidebar.html' %}
   </aside>
-  <section class="col-md-9">
+
+  <!-- Main scrollable content -->
+  <section class="dashboard-content">
+    <!-- Mobile sidebar toggle -->
+    <button
+      class="btn btn-outline-primary w-100 d-md-none mb-3 sidebar-toggle-btn"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#customerSidebar"
+      aria-expanded="false"
+      aria-controls="customerSidebar"
+    >
+      <i class="fas fa-bars me-2"></i>
+      Menu
+    </button>
+
     {% block customer_content %}{% endblock %}
   </section>
 </div>
 {% endblock %}
+

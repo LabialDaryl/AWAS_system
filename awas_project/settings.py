@@ -39,6 +39,9 @@ INSTALLED_APPS = [
     'payments.apps.PaymentsConfig',
     'complaints.apps.ComplaintsConfig',
     'core.apps.CoreConfig',
+    
+    # Notifications
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -74,6 +77,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'awas_project.wsgi.application'
 
 # Database
+# SQLite database for development
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -143,6 +147,7 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 GCASH_API_KEY = config('GCASH_API_KEY', default='')
 GCASH_API_SECRET = config('GCASH_API_SECRET', default='')
 GCASH_MERCHANT_ID = config('GCASH_MERCHANT_ID', default='')
+GCASH_SANDBOX = config('GCASH_SANDBOX', default=True, cast=bool)
 
 PAYPAL_CLIENT_ID = config('PAYPAL_CLIENT_ID', default='')
 PAYPAL_CLIENT_SECRET = config('PAYPAL_CLIENT_SECRET', default='')
@@ -165,8 +170,13 @@ MINIMUM_CHARGE = config('MINIMUM_CHARGE', default=150.00, cast=float)
 LATE_PAYMENT_PENALTY = config('LATE_PAYMENT_PENALTY', default=50.00, cast=float)
 RECONNECTION_FEE = config('RECONNECTION_FEE', default=500.00, cast=float)
 
-# Notification Settings
-NOTIFICATION_DAYS_BEFORE_DUE = config('NOTIFICATION_DAYS_BEFORE_DUE', default=3, cast=int)
+# Notifications settings
+NOTIFICATIONS_USE_JSONFIELD = False  # We're using jsonfield instead of django-jsonfield
+NOTIFICATIONS_SOFT_DELETE = True
+NOTIFICATIONS_USE_ICONS = True
+
+# Notification settings for the UI
+NOTIFICATION_DAYS_BEFORE_DUE = config('NOTIFICATION_DAYS_BEFORE_DUE', default=5, cast=int)
 NOTIFICATION_DAYS_BEFORE_DISCONNECTION = config('NOTIFICATION_DAYS_BEFORE_DISCONNECTION', default=1, cast=int)
 
 # Celery Configuration (for background tasks)
@@ -192,15 +202,20 @@ JAZZMIN_SETTINGS = {
     "site_title": "AWAS Admin",
     "site_header": "AWAS Admin",
     "welcome_sign": "Welcome to AWAS Admin Panel",
-    "theme": "light",
+
+    # Base (light) theme – keep using light as default
+    "theme": "flatly",
+
     # UI/UX
     "navigation_expanded": True,
+
+    # Load our custom assets for theme toggle and dark mode
+    # For this Jazzmin version, these must be strings (not lists)
+    "custom_css": "css/admin-theme.css",
+    "custom_js": "js/admin-theme-toggle.js",
 }
 
 # Jazzmin UI Tweaks (colors and layout)
-# Note: Jazzmin primarily uses Bootstrap utility classes for many colors.
-# We choose the closest built-ins to the requested palette and add hex hints
-# that newer Jazzmin versions may respect (ignored by older versions).
 JAZZMIN_UI_TWEAKS = {
     # Light theme baseline
     "theme": "light",
@@ -223,10 +238,4 @@ JAZZMIN_UI_TWEAKS = {
 
     # Sticky action bar in change forms
     "actions_sticky_top": True,
-
-    # Hints for custom brand colors (supported in newer Jazzmin)
-    "brand_color": "#0077be",   # Primary blue
-    "primary_color": "#00aaff", # Secondary/Top bar blue
-    "accent_color": "#0d6efd",  # Aqua accent
-    "font_color": "#333333",    # Dark gray text
 }

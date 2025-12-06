@@ -1,39 +1,83 @@
-<div class="card h-100">
-  <div class="card-header">Staff Menu</div>
-  <div class="list-group list-group-flush">
+<div class="card-header sidebar-header d-flex align-items-center">
+  <span class="sidebar-header-icon me-2">
+    <i class="fas fa-shield-alt"></i>
+  </span>
+  <span class="fw-semibold">Staff Console</span>
+</div>
+<div class="list-group list-group-flush sidebar-nav">
     {% with path=request.path %}
-      <a class="list-group-item list-group-item-action{% if path == '/billing/staff/dashboard/' %} active{% endif %}"
-         href="/billing/staff/dashboard/">Dashboard</a>
+      <a class="list-group-item sidebar-link{% if path == '/billing/staff/dashboard/' %} active{% endif %}"
+         href="/billing/staff/dashboard/">
+        <i class="fas fa-gauge sidebar-link-icon"></i>
+        <span>Dashboard</span>
+      </a>
 
       {# customers (prefix match) #}
-      <a class="list-group-item list-group-item-action{% if path|slice:':25' == '/billing/staff/customers/' %} active{% endif %}"
-         href="/billing/staff/customers/">Customers</a>
+      <a class="list-group-item sidebar-link{% if path|slice:':25' == '/billing/staff/customers/' %} active{% endif %}"
+         href="/billing/staff/customers/">
+        <i class="fas fa-users sidebar-link-icon"></i>
+        <span>Customers</span>
+      </a>
 
       {# any bills pages (prefix match) #}
-      <a class="list-group-item list-group-item-action{% if path|slice:':21' == '/billing/staff/bills/' %} active{% endif %}"
-         href="/billing/staff/bills/create/">Create Bill</a>
+      <a class="list-group-item sidebar-link{% if path|slice:':21' == '/billing/staff/bills/' %} active{% endif %}"
+         href="/billing/staff/bills/create/">
+        <i class="fas fa-file-invoice-dollar sidebar-link-icon"></i>
+        <span>Create Bill</span>
+      </a>
 
       {# membership requests (prefix match) #}
-      <a class="list-group-item list-group-item-action{% if path|slice:':36' == '/billing/staff/membership-requests/' %} active{% endif %}"
-         href="/billing/staff/membership-requests/">Membership Requests</a>
+      <a class="list-group-item sidebar-link{% if path|slice:':36' == '/billing/staff/membership-requests/' %} active{% endif %}"
+         href="/billing/staff/membership-requests/">
+        <i class="fas fa-id-card sidebar-link-icon"></i>
+        <span>Membership Requests</span>
+      </a>
 
       {# water updates (prefix match) #}
-      <a class="list-group-item list-group-item-action{% if path|slice:':29' == '/billing/staff/water-updates/' %} active{% endif %}"
-         href="/billing/staff/water-updates/">Water Updates</a>
+      <a class="list-group-item sidebar-link{% if path|slice:':29' == '/billing/staff/water-updates/' %} active{% endif %}"
+         href="/billing/staff/water-updates/">
+        <i class="fas fa-droplet sidebar-link-icon"></i>
+        <span>Water Updates</span>
+      </a>
 
       {# payments list (use named url to avoid 404) #}
       {% url 'payments:staff_payment_list' as staff_payments_url %}
-      <a class="list-group-item list-group-item-action{% if request.path == staff_payments_url %} active{% endif %}"
-         href="{{ staff_payments_url }}">Payments</a>
+      <a class="list-group-item sidebar-link{% if request.path == staff_payments_url %} active{% endif %}"
+         href="{{ staff_payments_url }}">
+        <i class="fas fa-credit-card sidebar-link-icon"></i>
+        <span>Payments</span>
+      </a>
 
       {# complaints (prefix match) #}
-       <a class="list-group-item list-group-item-action{% if path|slice:':29' == '/billing/staff/complaints/' %} active{% endif %}"
-         href="/billing/staff/complaints/">Complaints</a>
+      <a class="list-group-item sidebar-link{% if path|slice:':29' == '/billing/staff/complaints/' %} active{% endif %}"
+         href="/billing/staff/complaints/">
+        <i class="fas fa-envelope-open-text sidebar-link-icon"></i>
+        <span>Complaints</span>
+      </a>
 
+      <div class="sidebar-section-label mt-3 px-3 text-uppercase small fw-semibold">
+        <i class="fas fa-chart-bar me-2"></i> Reports
+      </div>
       {# Reports (prefix match) #}
-      <a class="list-group-item list-group-item-action{% if path|slice:':29' == '/billing/staff/reports/' %} active{% endif %}"
-         href="/billing/staff/reports/">Reports</a>
+      <a class="list-group-item sidebar-link{% if path|slice:':29' == '/billing/staff/reports/' %} active{% endif %}"
+         href="/billing/staff/reports/">
+        <i class="fas fa-chart-line sidebar-link-icon"></i>
+        <span>Analytics & Reports</span>
+      </a>
 
+      <div class="sidebar-section-label mt-3 px-3 text-uppercase small fw-semibold">
+        <i class="fas fa-gears me-2"></i> System Monitoring
+      </div>
+      <div class="sidebar-hint px-3 mb-1 small text-muted">
+        Real-time status of billing, payments, and updates.
+      </div>
+
+      <div class="sidebar-section-label mt-3 px-3 text-uppercase small fw-semibold">
+        <i class="fas fa-user-shield me-2"></i> Admin Tools
+      </div>
+      <div class="sidebar-hint px-3 small text-muted mb-3">
+        Use the reports and payment tools above for audits and controls.
+      </div>
     {% endwith %}
-  </div>
 </div>
+

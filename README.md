@@ -35,7 +35,7 @@ A comprehensive Django-based web application for managing water billing, payment
 
 - **Backend**: Python 3.x, Django 4.x
 - **Frontend**: HTML5, CSS3, Bootstrap 5
-- **Database**: SQLite (development) / PostgreSQL (production)
+- **Database**: SQLite
 - **Payment Integration**: GCash, PayPal, PayMaya APIs
 
 ## Project Structure
@@ -166,10 +166,16 @@ pip install -r requirements.txt
 ```
 
 4. Set up environment variables
-```bash
-cp .env.example .env
-# Edit .env with your configuration
+
+Create a `.env` file in the project root (same directory as `manage.py`) with at least:
+
+```env
+SECRET_KEY=your_secret_key
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
 ```
+
+For production, set `DEBUG=False` and adjust `ALLOWED_HOSTS` accordingly.
 
 5. Run migrations
 ```bash

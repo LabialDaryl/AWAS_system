@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-times-circle me-2"></i>Reject Refund</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Please provide a reason for rejecting this refund request.
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Refund Request Details</h5>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th>Reference Number:</th>
+                                <td>{{ payment.reference_number }}</td>
+                            </tr>
+                            <tr>
+                                <th>Customer:</th>
+                                <td>{{ payment.customer.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Refund Amount:</th>
+                                <td>₱{{ payment.refund_amount|floatformat:2 }}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Rejection Reason</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="4" required></textarea>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('Reject this refund request?')">
+                                <i class="fas fa-times me-2"></i>Reject Refund Request
+                            </button>
+                            <a href="{% url 'payments:admin_dashboard' %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
