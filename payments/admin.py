@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Payment, PaymentHistory, PaymentAuditLog
+from .models import Payment, PaymentHistory, PaymentAuditLog, PaymentProof, PaymentAudit
 
 
 class PaymentHistoryInline(admin.TabularInline):
@@ -81,3 +81,48 @@ class PaymentAuditLogAdmin(admin.ModelAdmin):
     
     def has_change_permission(self, request, obj=None):
         return False  # Audit logs are read-only
+
+
+@admin.register(PaymentProof)
+class PaymentProofAdmin(admin.ModelAdmin):
+    list_display = ['reference_number', 'customer', 'bill', 'status', 'submitted_at']
+    list_filter = ['status', 'submitted_at']
+    search_fields = ['reference_number', 'transaction_id', 'customer__username', 'customer__email', 'bill__id']
+    readonly_fields = ['submitted_at']
+    date_hierarchy = 'submitted_at'
+    
+    fieldsets = (
+        ('Proof Information', {
+            'fields': ('customer', 'bill', 'reference_number', 'transaction_id', 'status')
+        }),
+        ('Proof Details', {
+            'fields': ('screenshot', 'notes')
+        }),
+        ('Metadata', {
+            'fields': ('submitted_at',)
+        }),
+    )
+
+
+@admin.register(PaymentAudit)
+class PaymentAuditAdmin(admin.ModelAdmin):
+    list_display = ['proof', 'staff', 'action', 'admin_override', 'timestamp']
+    list_filter = ['action', 'admin_override', 'timestamp']
+    search_fields = ['proof__reference_number', 'staff__username', 'staff__email', 'reason']
+    readonly_fields = ['proof', 'staff', 'action', 'reason', 'timestamp', 'admin_override']
+    date_hierarchy = 'timestamp'
+    
+    fieldsets = (
+        ('Audit Information', {
+            'fields': ('proof', 'staff', 'action', 'admin_override', 'timestamp')
+        }),
+        ('Details', {
+            'fields': ('reason',)
+        }),
+    )
+    
+    def has_add_permission(self, request):
+        return False  # Audit records are created automatically
+    
+    def has_change_permission(self, request, obj=None):
+        return False  # Audit records are read-only

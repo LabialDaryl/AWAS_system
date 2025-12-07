@@ -1,0 +1,212 @@
+{% extends 'staff/base_staff.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item">
+                                <a href="{% url 'payments:pending_payment_proofs' %}">Pending Proofs</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Verify Payment</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Payment Details</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <th class="text-muted" style="width: 40%;">Customer:</th>
+                                        <td>{{ proof.customer.get_full_name|default:proof.customer.username }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Bill #:</th>
+                                        <td>{{ proof.bill.id }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Amount:</th>
+                                        <td class="fw-bold">₱{{ proof.bill.total_amount|floatformat:2|intcomma }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Reference #:</th>
+                                        <td><code>{{ proof.reference_number }}</code></td>
+                                    </tr>
+                                    {% if proof.transaction_id %}
+                                    <tr>
+                                        <th class="text-muted">Transaction ID:</th>
+                                        <td><code>{{ proof.transaction_id }}</code></td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <th class="text-muted">Submitted:</th>
+                                        <td>
+                                            {{ proof.submitted_at|date:"M d, Y H:i" }}
+                                            <small class="text-muted">({{ proof.submitted_at|timesince }} ago)</small>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            {% if proof.notes %}
+                            <div class="mt-4">
+                                <h6>Customer Notes</h6>
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        {{ proof.notes|linebreaksbr }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="sticky-top" style="top: 20px;">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="mb-0">Verification</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="text-center mb-4">
+                                            <a href="{{ proof.screenshot.url }}" data-bs-toggle="lightbox">
+                                                <img src="{{ proof.screenshot.url }}" 
+                                                     alt="Payment proof" 
+                                                     class="img-fluid rounded border"
+                                                     style="max-height: 200px;">
+                                            </a>
+                                            <div class="mt-2">
+                                                <a href="{{ proof.screenshot.url }}" 
+                                                   class="btn btn-sm btn-outline-primary" 
+                                                   target="_blank"
+                                                   download>
+                                                    <i class="fas fa-expand me-1"></i> View Full Size
+                                                </a>
+                                            </div>
+                                        </div>
+                                        
+                                        <form method="post" class="needs-validation" novalidate>
+                                            {% csrf_token %}
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Action</label>
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input" type="radio" 
+                                                           name="action" id="verify" value="verified" 
+                                                           required checked>
+                                                    <label class="form-check-label text-success fw-semibold" for="verify">
+                                                        <i class="fas fa-check-circle me-1"></i> Verify Payment
+                                                    </label>
+                                                    <div class="form-text">Approve this payment and mark as completed.</div>
+                                                </div>
+                                                
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" 
+                                                           name="action" id="reject" value="rejected" 
+                                                           required>
+                                                    <label class="form-check-label text-danger fw-semibold" for="reject">
+                                                        <i class="fas fa-times-circle me-1"></i> Reject Payment
+                                                    </label>
+                                                    <div class="form-text">Reject this payment with a reason.</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3" id="reasonField">
+                                                <label for="reason" class="form-label fw-semibold">Reason</label>
+                                                <textarea class="form-control" id="reason" name="reason" 
+                                                          rows="3" required placeholder="Please provide a reason for verification or rejection"></textarea>
+                                                <div class="invalid-feedback">
+                                                    Please provide a reason for your action.
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="d-grid gap-2">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-check-circle me-1"></i> Submit Verification
+                                                </button>
+                                                <a href="{% url 'payments:pending_payment_proofs' %}" class="btn btn-outline-secondary">
+                                                    <i class="fas fa-arrow-left me-1"></i> Back to List
+                                                </a>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Lightbox for image preview -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/ekko-lightbox/5.3.0/ekko-lightbox.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ekko-lightbox/5.3.0/ekko-lightbox.min.js"></script>
+
+<script>
+// Enable form validation
+(function () {
+    'use strict'
+    
+    // Fetch the form we want to apply custom validation to
+    var form = document.querySelector('.needs-validation')
+    
+    // Prevent submission if form is invalid
+    form.addEventListener('submit', function (event) {
+        if (!form.checkValidity()) {
+            event.preventDefault()
+            event.stopPropagation()
+        }
+        
+        form.classList.add('was-validated')
+    }, false)
+    
+    // Initialize lightbox
+    $(document).on('click', '[data-bs-toggle="lightbox"]', function(event) {
+        event.preventDefault();
+        $(this).ekkoLightbox({
+            alwaysShowClose: true,
+            showArrows: true,
+            onShown: function() {
+                $('.ekko-lightbox').addClass('fade');
+            }
+        });
+    });
+    
+    // Toggle required attribute on reason field based on action
+    const rejectRadio = document.getElementById('reject');
+    const reasonField = document.getElementById('reasonField');
+    
+    rejectRadio.addEventListener('change', function() {
+        if (this.checked) {
+            reasonField.classList.add('required');
+            reasonField.querySelector('textarea').setAttribute('required', 'required');
+        }
+    });
+    
+    document.getElementById('verify').addEventListener('change', function() {
+        if (this.checked) {
+            reasonField.classList.remove('required');
+            reasonField.querySelector('textarea').removeAttribute('required');
+        }
+    });
+})()
+</script>
+
+<style>
+.required label:after {
+    content: ' *';
+    color: #dc3545;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,299 @@
+{% extends 'staff/base_staff.html' %}
+{% load static humanize %}
+
+{% block title %}{{ title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ title }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'payments:pending_payment_proofs' %}" class="btn btn-outline-primary">
+                <i class="fas fa-list-check me-1"></i> Pending Proofs
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label">From Date</label>
+                    {{ form.date_from }}
+                </div>
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label">To Date</label>
+                    {{ form.date_to }}
+                </div>
+                <div class="col-md-3">
+                    <label for="action" class="form-label">Action</label>
+                    {{ form.action }}
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <div class="form-check form-switch mb-3">
+                        {{ form.admin_override }}
+                        <label class="form-check-label" for="id_admin_override">
+                            Admin Override Only
+                        </label>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-filter me-1"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'payments:payment_proof_audit_logs' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-sync-alt me-1"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Audit Logs Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Action</th>
+                                <th>Customer</th>
+                                <th>Reference #</th>
+                                <th>Amount</th>
+                                <th>Staff</th>
+                                <th>Reason</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in page_obj %}
+                            <tr>
+                                <td>
+                                    <span data-bs-toggle="tooltip" title="{{ log.timestamp|date:'M d, Y H:i:s' }}">
+                                        {{ log.timestamp|timesince }} ago
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if log.action == 'verified' %}success{% else %}danger{% endif %}">
+                                        {{ log.get_action_display }}
+                                    </span>
+                                    {% if log.admin_override %}
+                                        <span class="badge bg-warning text-dark" data-bs-toggle="tooltip" 
+                                              title="Admin Override">
+                                            <i class="fas fa-shield-alt"></i> Admin
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-user-circle text-muted"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-2">
+                                            {{ log.proof.customer.get_full_name|default:log.proof.customer.username }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <code>{{ log.proof.reference_number }}</code>
+                                </td>
+                                <td>₱{{ log.proof.bill.total_amount|floatformat:2|intcomma }}</td>
+                                <td>
+                                    {% if log.staff %}
+                                        {{ log.staff.get_full_name|default:log.staff.username }}
+                                    {% else %}
+                                        <span class="text-muted">System</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.reason %}
+                                        <span class="d-inline-block text-truncate" style="max-width: 200px;" 
+                                              data-bs-toggle="tooltip" title="{{ log.reason }}">
+                                            {{ log.reason }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'payments:view_payment_proof' log.proof.id %}" 
+                                           class="btn btn-outline-primary btn-sm"
+                                           data-bs-toggle="tooltip" 
+                                           title="View details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if is_admin and not log.admin_override %}
+                                        <form method="post" action="{% url 'payments:admin_override_proof' log.proof.id %}" 
+                                              class="d-inline" 
+                                              onsubmit="return confirm('Are you sure you want to override this decision?');">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="{% if log.action == 'verified' %}rejected{% else %}verified{% endif %}">
+                                            <input type="hidden" name="reason" value="Admin override of previous decision">
+                                            <button type="submit" class="btn btn-outline-warning btn-sm" 
+                                                    data-bs-toggle="tooltip" 
+                                                    title="Override decision">
+                                                <i class="fas fa-exchange-alt"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <div class="card-footer bg-white">
+                    <nav aria-label="Audit log pagination">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        <i class="fas fa-angle-double-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        <i class="fas fa-angle-left"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link"><i class="fas fa-angle-left"></i></span>
+                                </li>
+                            {% endif %}
+                            
+                            {% for i in page_obj.paginator.page_range %}
+                                {% if page_obj.number == i %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ i }} <span class="visually-hidden">(current)</span></span>
+                                    </li>
+                                {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        <i class="fas fa-angle-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link"><i class="fas fa-angle-right"></i></span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    <div class="text-center text-muted mt-2">
+                        Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} entries
+                    </div>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center p-5">
+                    <div class="mb-3">
+                        <i class="fas fa-clipboard-list fa-3x text-muted"></i>
+                    </div>
+                    <h5 class="text-muted">No audit logs found</h5>
+                    <p class="text-muted">There are no audit logs matching your criteria.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Enable tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+});
+
+// Initialize date pickers
+$(function() {
+    $('input[type="date"]').attr('type', 'text');
+    
+    $('input[name="date_from"], input[name="date_to"]').datepicker({
+        format: 'yyyy-mm-dd',
+        autoclose: true,
+        todayHighlight: true
+    });
+    
+    // Set max date for date_to to today
+    $('input[name="date_to"]').datepicker('setEndDate', new Date());
+    
+    // Set max date for date_from based on date_to
+    $('input[name="date_from"]').on('changeDate', function(selected) {
+        $('input[name="date_to"]').datepicker('setStartDate', selected.date);
+    });
+    
+    $('input[name="date_to"]').on('changeDate', function(selected) {
+        $('input[name="date_from"]').datepicker('setEndDate', selected.date);
+    });
+});
+</script>
+
+<!-- Include Datepicker CSS and JS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+
+<style>
+/* Custom styles for datepicker */
+.datepicker {
+    z-index: 9999 !important;
+}
+
+/* Style for action badges */
+.badge {
+    font-size: 0.8em;
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+.badge-verified {
+    background-color: #198754;
+}
+
+.badge-rejected {
+    background-color: #dc3545;
+}
+
+.badge-pending {
+    background-color: #6c757d;
+}
+
+/* Truncate text with ellipsis */
+.text-truncate {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    vertical-align: middle;
+}
+</style>
+{% endblock %}

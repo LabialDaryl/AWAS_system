@@ -65,6 +65,7 @@ class GCashService:
         Returns:
             dict: {'checkout_url': str, 'transaction_id': str} or {'error': str}
         """
+        logger.info(f"Creating GCash checkout for payment {payment.payment_id}")
         try:
             # Build callback URLs
             success_url = request.build_absolute_uri(
@@ -76,6 +77,10 @@ class GCashService:
             webhook_url = request.build_absolute_uri(
                 reverse('payments:gcash_webhook')
             )
+            
+            logger.debug(f"Success URL: {success_url}")
+            logger.debug(f"Cancel URL: {cancel_url}")
+            logger.debug(f"Webhook URL: {webhook_url}")
             
             # Prepare checkout payload
             payload = {
@@ -104,13 +109,22 @@ class GCashService:
             headers['X-Signature'] = signature
             headers['X-Timestamp'] = timestamp
             
+            logger.debug(f"Making API request to {self.base_url}/v1/checkout")
+            logger.debug(f"Headers: {headers}")
+            logger.debug(f"Payload: {json.dumps(payload, indent=2)}")
+            
             # Make API request to GCash
-            response = requests.post(
-                f"{self.base_url}/v1/checkout",
-                json=payload,
-                headers=headers,
-                timeout=30
-            )
+            try:
+                response = requests.post(
+                    f"{self.base_url}/v1/checkout",
+                    json=payload,
+                    headers=headers,
+                    timeout=30
+                )
+                logger.debug(f"GCash API response: {response.status_code} - {response.text}")
+            except requests.exceptions.RequestException as e:
+                logger.error(f"GCash API request failed: {str(e)}")
+                raise
             
             if response.status_code == 200:
                 data = response.json()
@@ -234,14 +248,21 @@ class GCashService:
         Returns:
             dict: Transaction status information
         """
+        logger.info(f"Getting transaction status for: {transaction_id}")
         try:
             headers = self._get_headers()
+            url = f"{self.base_url}/v1/transactions/{transaction_id}"
+            
+            logger.debug(f"Making API request to: {url}")
+            logger.debug(f"Headers: {headers}")
             
             response = requests.get(
-                f"{self.base_url}/v1/transactions/{transaction_id}",
+                url,
                 headers=headers,
                 timeout=30
             )
+            
+            logger.debug(f"GCash status check response: {response.status_code} - {response.text}")
             
             if response.status_code == 200:
                 return {

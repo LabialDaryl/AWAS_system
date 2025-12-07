@@ -2,10 +2,30 @@
 {% block staff_content %}
 <h2>Staff Dashboard</h2>
 <div class="row g-3">
-  <div class="col-md-3"><div class="card text-center p-3"><div>Total Customers</div><h3>{{ total_customers }}</h3></div></div>
-  <div class="col-md-3"><div class="card text-center p-3"><div>Active</div><h3>{{ active_customers }}</h3></div></div>
-  <div class="col-md-3"><div class="card text-center p-3"><div>Unpaid Bills</div><h3>{{ unpaid_bills }}</h3></div></div>
-  <div class="col-md-3"><div class="card text-center p-3"><div>Pending Requests</div><h3>{{ pending_requests }}</h3></div></div>
+  <div class="col-md-3">
+    <div class="card text-center p-3 bg-primary text-white">
+      <div>Total Customers</div>
+      <h3 class="mb-0">{{ total_customers }}</h3>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center p-3 bg-success text-white">
+      <div>Active</div>
+      <h3 class="mb-0">{{ active_customers }}</h3>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center p-3 bg-warning text-white">
+      <div>Unpaid Bills</div>
+      <h3 class="mb-0">{{ unpaid_bills }}</h3>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center p-3 bg-info text-white">
+      <div>Pending Requests</div>
+      <h3 class="mb-0">{{ pending_requests }}</h3>
+    </div>
+  </div>
 </div>
 <div class="mt-4">
   <a class="btn btn-primary" href="/billing/staff/bills/create/">Create Bill</a>

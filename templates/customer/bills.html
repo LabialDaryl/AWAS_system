@@ -18,7 +18,7 @@
         <td>
           <a class="btn btn-sm btn-secondary" href="/billing/customer/bill/{{ b.id }}/">Details</a>
         </td>
-        <td><a class="btn btn-sm btn-success" href="/payments/pay/{{ b.id }}/">Pay</a></td>
+        <td><a class="btn btn-sm btn-success" href="{% url 'payments:initiate_payment' b.id %}">Pay</a></td>
       </tr>
     {% empty %}
       <tr><td colspan="6" class="text-center">No bills found.</td></tr>

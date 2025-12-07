@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from django.http import JsonResponse, HttpResponse, Http404
+from django.http import JsonResponse, HttpResponse, Http404, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.db import transaction
@@ -17,8 +17,9 @@ import json
 import logging
 
 from billing.models import Bill
-from .models import Payment, PaymentHistory, PaymentAuditLog
-from .forms import OnlinePaymentForm, WalkInPaymentForm, PaymentVerificationForm
+from .models import Payment, PaymentHistory, PaymentAuditLog, PaymentProof, PaymentAudit
+from .forms import (OnlinePaymentForm, WalkInPaymentForm, PaymentVerificationForm,
+                   PaymentProofForm, PaymentVerificationActionForm, PaymentAuditFilterForm)
 from .gcash_service import GCashService
 from .utils import log_payment_action, get_client_ip
 from .receipt import generate_pdf_receipt, generate_html_receipt, send_receipt_email
@@ -29,6 +30,34 @@ logger = logging.getLogger(__name__)
 
 
 # ==================== CUSTOMER VIEWS ====================
+
+@login_required
+def payment_instructions(request, bill_id):
+    """Display GCash payment instructions and QR code"""
+    if not request.user.is_customer:
+        messages.error(request, 'Access denied.')
+        return redirect('core:home')
+    
+    bill = get_object_or_404(Bill, id=bill_id)
+    
+    # Check if user owns this bill
+    if bill.customer != request.user:
+        messages.error(request, 'You do not have permission to view this bill.')
+        return redirect('billing:customer_bills')
+    
+    # Check if bill is already paid
+    if bill.payment_status == 'paid':
+        messages.info(request, 'This bill is already paid.')
+        return redirect('billing:customer_bills')
+    
+    context = {
+        'bill': bill,
+        'bill_id': bill_id,
+        'title': 'GCash Payment Instructions'
+    }
+    
+    return render(request, 'payments/gcash_payment_instruction.html', context)
+
 
 @login_required
 def initiate_payment(request, bill_id):
@@ -49,39 +78,73 @@ def initiate_payment(request, bill_id):
         messages.info(request, 'This bill is already paid.')
         return redirect('billing:customer_bills')
     
+    # Handle form submission
     if request.method == 'POST':
         form = OnlinePaymentForm(request.POST, bill=bill)
         if form.is_valid():
-            payment = form.save(commit=False)
-            payment.bill = bill
-            payment.customer = request.user
-            payment.payment_status = 'pending'
-            payment.save()
+            payment_method = form.cleaned_data['payment_method']
             
-            # Create payment history
-            PaymentHistory.objects.create(
-                payment=payment,
-                status='pending',
-                notes='Payment initiated by customer',
-                changed_by=request.user
-            )
+            # Check for existing payment
+            existing_payment = Payment.objects.filter(
+                bill=bill,
+                payment_status__in=['pending', 'processing', 'pending_verification']
+            ).first()
             
-            # Log action
-            log_payment_action(
-                payment, 'payment_initiated', request.user, request,
-                {'bill_id': bill.id, 'amount': str(payment.amount)}
-            )
-            
-            # If GCash, redirect to GCash checkout
-            if payment.payment_method == 'gcash':
-                return redirect('payments:gcash_checkout', payment_id=payment.payment_id)
+            if existing_payment:
+                # Update existing payment with new method
+                existing_payment.payment_method = payment_method
+                existing_payment.save()
+                payment = existing_payment
             else:
-                # For other payment methods, redirect to process page
-                return redirect('payments:process_payment', payment_id=payment.payment_id)
+                # Create a new payment record
+                payment = Payment.objects.create(
+                    bill=bill,
+                    customer=request.user,
+                    amount=bill.total_amount,
+                    payment_status='pending',
+                    payment_method=payment_method,
+                    created_by=request.user
+                )
+                # Log the payment creation
+                log_payment_action(payment, 'payment_created', request.user, request)
+            
+            # Handle different payment methods
+            if payment_method == 'gcash':
+                return redirect('payments:payment_instructions', bill_id=bill_id)
+            elif payment_method == 'walk_in':
+                messages.info(request, 'For walk-in payments, please visit the official AWAS office to process your payment.')
+                return redirect('billing:customer_bills')
+            else:
+                messages.error(request, 'Selected payment method is not available.')
+                return redirect('payments:initiate_payment', bill_id=bill_id)
     else:
+        # GET request - show the form
         form = OnlinePaymentForm(bill=bill)
     
-    return render(request, 'payments/initiate.html', {'form': form, 'bill': bill})
+    # Get or create payment for the template
+    payment = Payment.objects.filter(
+        bill=bill,
+        customer=request.user,
+        payment_status__in=['pending', 'processing', 'pending_verification']
+    ).first()
+    
+    if not payment:
+        payment = Payment.objects.create(
+            bill=bill,
+            customer=request.user,
+            amount=bill.total_amount,
+            payment_status='pending',
+            payment_method='gcash',  # Default
+            created_by=request.user
+        )
+        log_payment_action(payment, 'payment_created', request.user, request)
+    
+    context = {
+        'bill': bill,
+        'form': form,
+        'payment': payment,
+    }
+    return render(request, 'payments/initiate.html', context)
 
 
 @login_required
@@ -184,14 +247,31 @@ def payment_history(request):
         messages.error(request, 'Access denied.')
         return redirect('core:home')
     
-    payments = Payment.objects.filter(customer=request.user).select_related('bill').order_by('-payment_date')
+    payments = Payment.objects.filter(
+        customer=request.user
+    ).select_related('bill').order_by('-created_at')
     
     # Pagination
-    paginator = Paginator(payments, 10)
+    paginator = Paginator(payments, 10)  # Show 10 payments per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    return render(request, 'payments/history.html', {'page_obj': page_obj})
+    # Get payment proofs for each payment
+    payment_proofs = {}
+    for payment in page_obj:
+        try:
+            # Get proof using bill field instead of payment
+            proof = PaymentProof.objects.get(bill=payment.bill)
+            payment_proofs[payment.id] = proof
+        except PaymentProof.DoesNotExist:
+            pass
+    
+    context = {
+        'page_obj': page_obj,
+        'payment_proofs': payment_proofs,
+        'title': 'My Payment History'
+    }
+    return render(request, 'payments/history.html', context)
 
 
 @login_required
@@ -213,7 +293,305 @@ def download_receipt(request, payment_id):
     return response
 
 
+# ==================== PAYMENT PROOF VIEWS ====================
+
+@login_required
+def submit_payment_proof(request, bill_id):
+    """Submit payment proof - Customer only"""
+    if not request.user.is_customer:
+        messages.error(request, 'Access denied.')
+        return redirect('core:home')
+    
+    bill = get_object_or_404(Bill, id=bill_id, customer=request.user)
+    
+    # Check if bill is already paid
+    if bill.payment_status == 'paid':
+        messages.info(request, 'This bill is already paid.')
+        return redirect('billing:customer_bills')
+    
+    # Check if proof already exists for this bill
+    existing_proof = PaymentProof.objects.filter(bill=bill, customer=request.user).first()
+    if existing_proof:
+        if existing_proof.status == 'pending':
+            messages.info(request, 'You have already submitted a proof for this bill. It is pending verification.')
+        elif existing_proof.status == 'verified':
+            messages.info(request, 'This bill has already been verified and paid.')
+        else:
+            messages.info(request, 'You can submit a new proof for this bill.')
+        return redirect('billing:customer_bills')
+    
+    if request.method == 'POST':
+        form = PaymentProofForm(request.POST, request.FILES, user=request.user, bill=bill)
+        if form.is_valid():
+            payment_proof = form.save(commit=False)
+            payment_proof.bill = bill
+            payment_proof.customer = request.user
+            payment_proof.status = 'pending'
+            payment_proof.save()
+            
+            # Log the action
+            log_payment_action(
+                payment=None,
+                action='submitted_proof',
+                user=request.user,
+                request=request,
+                details={
+                    'bill_id': bill.id,
+                    'reference_number': payment_proof.reference_number,
+                    'proof_id': payment_proof.id
+                }
+            )
+            
+            # TODO: Send notification email to customer and staff
+            
+            messages.success(request, 'Your payment proof has been submitted for verification. You will be notified once it is reviewed.')
+            return redirect('billing:customer_bills')
+    else:
+        form = PaymentProofForm(user=request.user, bill=bill)
+    
+    context = {
+        'form': form,
+        'bill': bill,
+        'title': 'Submit Payment Proof'
+    }
+    return render(request, 'payments/submit_proof.html', context)
+
+
+@login_required
+def view_payment_proof(request, proof_id):
+    """View payment proof - Customer, Staff, and Admin"""
+    proof = get_object_or_404(PaymentProof, id=proof_id)
+    
+    # Check permissions
+    if not (request.user == proof.customer or request.user.is_staff or request.user.is_superuser):
+        messages.error(request, 'You do not have permission to view this proof.')
+        return redirect('core:home')
+    
+    context = {
+        'proof': proof,
+        'title': 'Payment Proof Details'
+    }
+    return render(request, 'payments/view_proof.html', context)
+
+
 # ==================== STAFF VIEWS ====================
+
+@login_required
+def pending_payment_proofs(request):
+    """List all pending payment proofs for staff verification"""
+    if not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, 'Access denied.')
+        return redirect('core:home')
+    
+    proofs = PaymentProof.objects.filter(
+        status='pending'
+    ).select_related('bill', 'customer').order_by('submitted_at')
+    
+    context = {
+        'proofs': proofs,
+        'title': 'Pending Payment Proofs'
+    }
+    return render(request, 'payments/staff/pending_proofs.html', context)
+
+
+@login_required
+def verify_payment_proof(request, proof_id):
+    """Verify or reject a payment proof - Staff only"""
+    if not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, 'Access denied.')
+        return redirect('core:home')
+    
+    proof = get_object_or_404(PaymentProof, id=proof_id)
+    
+    if proof.status != 'pending':
+        messages.error(request, 'This proof is not pending verification.')
+        return redirect('payments:pending_payment_proofs')
+    
+    if request.method == 'POST':
+        form = PaymentVerificationActionForm(request.POST, staff=request.user, payment_proof=proof)
+        if form.is_valid():
+            action = form.cleaned_data['action']
+            reason = form.cleaned_data['reason']
+            
+            with transaction.atomic():
+                # Update proof status
+                proof.status = action
+                proof.save()
+                
+                # Create PaymentAudit record
+                PaymentAudit.objects.create(
+                    proof=proof,
+                    staff=request.user,
+                    action=action,
+                    reason=reason,
+                    admin_override=False
+                )
+                
+                # If verified, update bill payment status
+                if action == 'verified':
+                    bill = proof.bill
+                    bill.amount_paid = bill.total_amount
+                    bill.payment_status = 'paid'
+                    bill.save()
+                    
+                    # Log the action
+                    log_payment_action(
+                        payment=None,
+                        action='payment_verified',
+                        user=request.user,
+                        request=request,
+                        details={
+                            'proof_id': proof.id,
+                            'bill_id': bill.id,
+                            'reference_number': proof.reference_number,
+                            'reason': reason
+                        }
+                    )
+                    
+                    # TODO: Send notification email to customer
+                    messages.success(request, 'Payment proof has been verified. Bill has been marked as paid.')
+                else:
+                    # Log rejection
+                    log_payment_action(
+                        payment=None,
+                        action='payment_rejected',
+                        user=request.user,
+                        request=request,
+                        details={
+                            'proof_id': proof.id,
+                            'bill_id': proof.bill.id,
+                            'reference_number': proof.reference_number,
+                            'reason': reason
+                        }
+                    )
+                    
+                    # TODO: Send notification email to customer
+                    messages.success(request, 'Payment proof has been rejected.')
+                
+                return redirect('payments:pending_payment_proofs')
+    else:
+        form = PaymentVerificationActionForm(staff=request.user, payment_proof=proof)
+    
+    context = {
+        'form': form,
+        'proof': proof,
+        'bill': proof.bill,
+        'title': 'Verify Payment Proof'
+    }
+    return render(request, 'payments/staff/verify_proof.html', context)
+
+
+@login_required
+def payment_proof_audit_logs(request):
+    """View payment proof audit logs - Staff and Admin"""
+    if not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, 'Access denied.')
+        return redirect('core:home')
+    
+    logs = PaymentAudit.objects.all().select_related('proof', 'proof__bill', 'proof__customer', 'staff').order_by('-timestamp')
+    
+    # Apply filters
+    form = PaymentAuditFilterForm(request.GET or None)
+    if form.is_valid():
+        if form.cleaned_data['date_from']:
+            logs = logs.filter(timestamp__date__gte=form.cleaned_data['date_from'])
+        if form.cleaned_data['date_to']:
+            logs = logs.filter(timestamp__date__lte=form.cleaned_data['date_to'])
+        if form.cleaned_data['action']:
+            logs = logs.filter(action=form.cleaned_data['action'])
+        if form.cleaned_data['admin_override']:
+            logs = logs.filter(admin_override=True)
+    
+    # Pagination
+    paginator = Paginator(logs, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'form': form,
+        'title': 'Payment Proof Audit Logs',
+        'is_admin': request.user.is_superuser
+    }
+    return render(request, 'payments/staff/audit_logs.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def admin_override_proof(request, proof_id):
+    """Admin override staff decision on payment proof - Admin only"""
+    if not request.user.is_superuser:
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect('core:home')
+    
+    proof = get_object_or_404(PaymentProof, id=proof_id)
+    action = request.POST.get('action')
+    reason = request.POST.get('reason', '')
+    
+    if action not in ['verified', 'rejected']:
+        messages.error(request, 'Invalid action.')
+        return redirect('payments:payment_proof_audit_logs')
+    
+    with transaction.atomic():
+        # Update proof status
+        old_status = proof.status
+        proof.status = action
+        proof.save()
+        
+        # Create PaymentAudit record with admin_override=True
+        PaymentAudit.objects.create(
+            proof=proof,
+            staff=request.user,
+            action=action,
+            reason=f"Admin override. Previous status: {old_status}. {reason}",
+            admin_override=True
+        )
+        
+        # If verified, update bill payment status
+        if action == 'verified':
+            bill = proof.bill
+            bill.amount_paid = bill.total_amount
+            bill.payment_status = 'paid'
+            bill.save()
+            
+            log_payment_action(
+                payment=None,
+                action='payment_verified',
+                user=request.user,
+                request=request,
+                details={
+                    'proof_id': proof.id,
+                    'bill_id': bill.id,
+                    'reference_number': proof.reference_number,
+                    'reason': reason,
+                    'admin_override': True
+                }
+            )
+        else:
+            # If rejected, ensure bill is not marked as paid
+            bill = proof.bill
+            if bill.payment_status == 'paid':
+                bill.payment_status = 'unpaid'
+                bill.amount_paid = 0
+                bill.save()
+            
+            log_payment_action(
+                payment=None,
+                action='payment_rejected',
+                user=request.user,
+                request=request,
+                details={
+                    'proof_id': proof.id,
+                    'bill_id': proof.bill.id,
+                    'reference_number': proof.reference_number,
+                    'reason': reason,
+                    'admin_override': True
+                }
+            )
+        
+        messages.success(request, f'Payment proof has been {action} by admin override.')
+    
+    return redirect('payments:payment_proof_audit_logs')
 
 @login_required
 def staff_payment_list(request):
@@ -888,3 +1266,120 @@ def paymaya_callback(request):
     """Handle PayMaya payment callback"""
     # Placeholder for PayMaya integration
     return JsonResponse({'status': 'received'})
+
+
+def check_payment_status(request, payment_id):
+    """Check payment status manually for pending payments"""
+    try:
+        payment = get_object_or_404(Payment, payment_id=payment_id)
+        
+        # Verify user has permission to check this payment
+        if request.user.is_authenticated and not request.user.is_staff and payment.customer != request.user:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': 'Permission denied'}, status=403)
+            messages.error(request, 'You do not have permission to view this payment.')
+            return redirect('core:home')
+            
+        if payment.payment_status in ['completed', 'failed', 'cancelled']:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'status': payment.payment_status,
+                    'message': f'Payment is already {payment.get_payment_status_display()}' 
+                })
+            messages.info(request, f"Payment is already {payment.get_payment_status_display()}.")
+            return redirect('payments:payment_history')
+        
+        gcash = GCashService()
+        if payment.gateway_transaction_id:
+            result = gcash.get_transaction_status(payment.gateway_transaction_id)
+            logger.debug(f"Payment status check result: {result}")
+            
+            if result.get('status') == 'success':
+                data = result.get('data', {})
+                status = data.get('status', '').lower()
+                
+                with transaction.atomic():
+                    old_status = payment.payment_status
+                    
+                    if status in ['success', 'completed']:
+                        payment.payment_status = 'completed'
+                        payment.transaction_id = payment.transaction_id or data.get('transaction_id', '')
+                        payment.processed_date = timezone.now()
+                        
+                        # Update bill if not already updated
+                        if old_status not in ['completed', 'success']:
+                            payment.bill.amount_paid += payment.amount
+                            payment.bill.save()
+                        
+                        # Send receipt if not sent
+                        if not payment.receipt_sent:
+                            send_receipt_email(payment)
+                        
+                        message = "Payment completed successfully!"
+                        
+                    elif status == 'failed':
+                        payment.payment_status = 'failed'
+                        message = "Payment failed. Please try again."
+                        
+                    elif status == 'cancelled':
+                        payment.payment_status = 'cancelled'
+                        message = "Payment was cancelled."
+                        
+                    else:
+                        message = f"Payment is still {status}."
+                    
+                    # Save payment changes
+                    payment.gateway_response = json.dumps(data)
+                    payment.save()
+                    
+                    # Log the status check
+                    PaymentHistory.objects.create(
+                        payment=payment,
+                        status=payment.payment_status,
+                        notes=f'Status checked manually: {status}',
+                        changed_by=request.user if request.user.is_authenticated else None
+                    )
+                    
+                    log_payment_action(
+                        payment, 'status_checked', request.user, request,
+                        {'old_status': old_status, 'new_status': payment.payment_status}
+                    )
+                
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'status': payment.payment_status,
+                        'message': message,
+                        'redirect': reverse('payments:payment_history')
+                    })
+                
+                messages.success(request, message) if payment.payment_status == 'completed' else messages.info(request, message)
+                return redirect('payments:payment_history')
+            
+            error_msg = result.get('error', 'Unknown error occurred while checking payment status')
+            logger.error(f"Payment status check failed: {error_msg}")
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': error_msg}, status=400)
+                
+            messages.error(request, f"Error checking payment status: {error_msg}")
+            return redirect('payments:payment_history')
+            
+        else:
+            error_msg = "No transaction ID found for this payment."
+            logger.warning(f"{error_msg} Payment ID: {payment_id}")
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': error_msg}, status=400)
+                
+            messages.warning(request, error_msg)
+            return redirect('payments:payment_history')
+            
+    except Exception as e:
+        error_msg = f"Error checking payment status: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': 'Internal server error'}, status=500)
+            
+        messages.error(request, 'An error occurred while checking the payment status.')
+        return redirect('payments:payment_history')

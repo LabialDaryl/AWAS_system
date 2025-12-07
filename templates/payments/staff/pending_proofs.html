@@ -1,0 +1,98 @@
+{% extends 'staff/base_staff.html' %}
+{% load static humanize %}
+
+{% block title %}{{ title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ title }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'payments:payment_proof_audit_logs' %}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-history me-1"></i> View Audit Logs
+            </a>
+        </div>
+    </div>
+
+    {% if proofs %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Customer</th>
+                        <th>Reference #</th>
+                        <th>Amount</th>
+                        <th>Submitted</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proof in proofs %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-user-circle fa-2x text-muted"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-2">
+                                    <div class="fw-semibold">{{ proof.customer.get_full_name|default:proof.customer.username }}</div>
+                                    <small class="text-muted">{{ proof.customer.email }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <code>{{ proof.reference_number }}</code>
+                            {% if proof.transaction_id %}
+                                <div class="small text-muted">{{ proof.transaction_id }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="fw-semibold">₱{{ proof.bill.total_amount|floatformat:2|intcomma }}</div>
+                            <small class="text-muted">Bill #{{ proof.bill.id }}</small>
+                        </td>
+                        <td>
+                            <span data-bs-toggle="tooltip" title="{{ proof.submitted_at|date:'M d, Y H:i' }}">
+                                {{ proof.submitted_at|timesince }} ago
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'payments:view_payment_proof' proof.id %}" 
+                                   class="btn btn-outline-primary"
+                                   data-bs-toggle="tooltip" 
+                                   title="View details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'payments:verify_payment_proof' proof.id %}" 
+                                   class="btn btn-outline-success"
+                                   data-bs-toggle="tooltip" 
+                                   title="Verify payment">
+                                    <i class="fas fa-check"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            There are no pending payment proofs at the moment.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Enable tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+});
+</script>
+{% endblock %}

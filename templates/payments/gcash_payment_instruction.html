@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}GCash Payment Instructions - AWAS{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">GCash Payment Instructions</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5 class="alert-heading">Please follow these steps to complete your payment:</h5>
+                        <ol class="mb-0">
+                            <li>Open your GCash app</li>
+                            <li>Tap on "Scan QR" and scan the QR code below</li>
+                            <li>Or send payment to: <strong>+63 946 103 1234</strong> (DARYL LABIAL)</li>
+                            <li>Enter the exact amount shown on your bill</li>
+                            <li>After payment, take a screenshot of the transaction</li>
+                            <li>Click the "Submit Payment Proof" button to upload your receipt</li>
+                        </ol>
+                    </div>
+
+                    <div class="text-center my-4">
+                        <div class="mb-3">
+                            <img src="{% static 'images/gcash.jpg' %}" alt="GCash QR Code" class="img-fluid" style="max-width: 250px;">
+                        </div>
+                        <div class="mb-4">
+                            <p class="mb-1">GCash Number: <strong>+63 946 103 2379</strong></p>
+                            <p class="mb-1">Account Name: <strong>DARYL LABIAL</strong></p>
+                        </div>
+                        
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="{% url 'payments:submit_payment_proof' bill_id=bill_id %}" class="btn btn-primary">
+                                <i class="fas fa-upload me-2"></i>Submit Payment Proof
+                            </a>
+                            <a href="{% url 'billing:customer_bills' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Bills
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning mt-4">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Important Notes:</h6>
+                        <ul class="mb-0">
+                            <li>Payments may take up to 24 hours to be verified</li>
+                            <li>Make sure to upload the payment proof immediately after payment</li>
+                            <li>Keep a copy of your transaction details for reference</li>
+                            <li>For any issues, please contact our support team</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

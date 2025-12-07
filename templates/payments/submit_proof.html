@@ -1,0 +1,124 @@
+{% extends 'customer/base_customer.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ title }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if bill %}
+                    <div class="alert alert-info mb-3">
+                        <h6 class="alert-heading"><i class="fas fa-file-invoice-dollar me-2"></i>Bill Information</h6>
+                        <p class="mb-0">
+                            <strong>Bill #{{ bill.id }}</strong> | 
+                            Amount: <strong>₱{{ bill.total_amount|floatformat:2}}</strong> | 
+                            Due Date: {{ bill.due_date|date:"M d, Y" }}
+                        </p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Instructions:</strong> Enter your GCash reference number and upload a clear screenshot of your GCash payment confirmation.
+                        Make sure the reference number and amount are visible in the image.
+                    </div>
+                    
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_reference_number" class="form-label">GCash Reference Number</label>
+                            {{ form.reference_number }}
+                            {% if form.reference_number.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.reference_number.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Enter the reference number from your GCash transaction.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_transaction_id" class="form-label">Transaction ID (Optional)</label>
+                            {{ form.transaction_id }}
+                            {% if form.transaction_id.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.transaction_id.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">If you have a transaction ID, please provide it.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_screenshot" class="form-label">Screenshot</label>
+                            {{ form.screenshot }}
+                            {% if form.screenshot.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.screenshot.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Maximum file size: 2MB. Allowed formats: JPG, JPEG, PNG</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_notes" class="form-label">Additional Notes</label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.notes.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Add any additional information about this payment.</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'billing:customer_bills' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-arrow-left me-1"></i> Back to Bills
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload me-1"></i> Submit Proof
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Your payment information is secure and will be verified by our staff.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Enable Bootstrap form validation
+(function () {
+    'use strict'
+    
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    var forms = document.querySelectorAll('.needs-validation')
+    
+    // Loop over them and prevent submission
+    Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                
+                form.classList.add('was-validated')
+            }, false)
+        })
+})()
+</script>
+{% endblock %}

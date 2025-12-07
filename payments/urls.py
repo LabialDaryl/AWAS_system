@@ -1,11 +1,16 @@
 from django.urls import path
+from django.contrib.auth.decorators import login_required
 from . import views
 
 app_name = 'payments'
 
 urlpatterns = [
     # Customer payment views
+    path('instructions/<int:bill_id>/', login_required(views.payment_instructions), name='payment_instructions'),
     path('pay/<int:bill_id>/', views.initiate_payment, name='initiate_payment'),
+    path('proof/submit/<int:bill_id>/', views.submit_payment_proof, name='submit_payment_proof'),
+    path('proof/view/<int:proof_id>/', views.view_payment_proof, name='view_payment_proof'),
+    path('status/<uuid:payment_id>/', views.check_payment_status, name='check_payment_status'),
     path('gcash/checkout/<uuid:payment_id>/', views.gcash_checkout, name='gcash_checkout'),
     path('success/<uuid:payment_id>/', views.payment_success, name='payment_success'),
     path('failed/<uuid:payment_id>/', views.payment_failed, name='payment_failed'),
@@ -13,6 +18,10 @@ urlpatterns = [
     path('receipt/<uuid:payment_id>/', views.download_receipt, name='download_receipt'),
     
     # Staff payment views
+    path('staff/proofs/pending/', views.pending_payment_proofs, name='pending_payment_proofs'),
+    path('staff/proofs/verify/<int:proof_id>/', views.verify_payment_proof, name='verify_payment_proof'),
+    path('staff/proofs/audit-logs/', views.payment_proof_audit_logs, name='payment_proof_audit_logs'),
+    path('admin/proofs/override/<int:proof_id>/', views.admin_override_proof, name='admin_override_proof'),
     path('staff/walk-in/', views.staff_walk_in_create, name='staff_walk_in_create'),
     path('staff/record/<int:bill_id>/', views.record_walk_in_payment, name='record_walk_in_payment'),
     path('staff/verify/<int:payment_id>/', views.verify_payment, name='verify_payment'),
