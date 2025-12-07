@@ -369,7 +369,11 @@ def customer_list(request):
         customers = customers.filter(is_suspended=True)
     
     if purok_filter:
-        customers = customers.filter(purok_number=purok_filter)
+        try:
+            purok_num = int(purok_filter)
+            customers = customers.filter(purok_number=purok_num)
+        except (ValueError, TypeError):
+            pass  # Ignore invalid purok numbers
 
     # Bill coverage filter for current month
     if bill_filter in ['this_month_with', 'this_month_without']:

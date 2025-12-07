@@ -72,6 +72,9 @@
               {% if form.password.errors %}
               <div class="text-danger small mt-1">{{ form.password.errors }}</div>
               {% endif %}
+              <div class="text-end mt-2">
+                <a href="{% url 'accounts:password_reset' %}" class="small text-decoration-none">Forgot password?</a>
+              </div>
             </div>
 
             <!-- Submit Button -->
