@@ -39,6 +39,14 @@ class BillCreateForm(forms.ModelForm):
             )
         self.fields['customer'].queryset = qs.order_by('last_name', 'first_name')
 
+    def clean(self):
+        cleaned_data = super().clean()
+        prev = cleaned_data.get('previous_reading')
+        pres = cleaned_data.get('present_reading')
+        if prev is not None and pres is not None and pres < prev:
+            self.add_error('present_reading', 'Present reading cannot be less than previous reading.')
+        return cleaned_data
+
 
 class BillUpdateForm(forms.ModelForm):
     """Form for staff to update bills"""
@@ -50,6 +58,14 @@ class BillUpdateForm(forms.ModelForm):
             'due_date': forms.DateInput(attrs={'type': 'date'}),
             'disconnection_date': forms.DateInput(attrs={'type': 'date'}),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        pres = cleaned_data.get('present_reading')
+        if pres is not None and getattr(self, 'instance', None) and self.instance.previous_reading is not None:
+            if pres < self.instance.previous_reading:
+                self.add_error('present_reading', f'Present reading cannot be less than previous reading ({self.instance.previous_reading}).')
+        return cleaned_data
 
 
 class BillFilterForm(forms.Form):

@@ -291,21 +291,6 @@ function initModalEnhancements() {
             });
         });
     });
-    
-    // Forgot password form
-    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
-    if (forgotPasswordForm) {
-        forgotPasswordForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            const email = document.getElementById('forgotEmail').value;
-            
-            if (email) {
-                showModalAlert(forgotPasswordForm, 'info', 'Password reset functionality would be implemented here.');
-            } else {
-                showModalAlert(forgotPasswordForm, 'warning', 'Please enter your email address.');
-            }
-        });
-    }
 }
 
 // Helper function to show modal alerts

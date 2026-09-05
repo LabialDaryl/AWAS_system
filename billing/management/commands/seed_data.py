@@ -12,9 +12,68 @@ User = get_user_model()
 
 class Command(BaseCommand):
     help = 'Seeds the database with sample data for demo purposes'
+    
+    def _generate_daily_consumption(self, date, base_consumption):
+        """Generate realistic daily water consumption based on date and base consumption"""
+        # Seasonal adjustment (higher in summer, lower in winter)
+        month = date.month
+        if 3 <= month <= 5:  # Summer (March-May)
+            season_factor = 1.3  # 30% higher in summer
+        elif 6 <= month <= 10:  # Rainy season (June-October)
+            season_factor = 1.0  # Normal usage
+        else:  # Cool months (November-February)
+            season_factor = 0.8  # 20% lower in cool months
+        
+        # Day of week adjustment (higher on weekends)
+        day_of_week = date.weekday()
+        if day_of_week >= 5:  # Weekend
+            day_factor = 1.4  # 40% higher on weekends
+        elif day_of_week == 2 or day_of_week == 3:  # Mid-week peak
+            day_factor = 1.1  # 10% higher mid-week
+        else:
+            day_factor = 0.9  # 10% lower on other weekdays
+        
+        # Random variation (0.8 to 1.2)
+        random_factor = 0.8 + (random.random() * 0.4)
+        
+        # Calculate daily consumption
+        daily_consumption = base_consumption * season_factor * day_factor * random_factor
+        
+        # Add some randomness for special days (5% chance)
+        if random.random() < 0.05:
+            daily_consumption *= 1.5 + (random.random() * 0.5)  # 50-100% increase
+        
+        return round(daily_consumption, 2)
+    
+    def _generate_water_readings(self, start_date, end_date, initial_reading):
+        """Generate realistic water readings for a date range"""
+        current_reading = initial_reading
+        current_date = start_date
+        readings = []
+        
+        # Base daily consumption in cubic meters (average household usage)
+        base_daily_consumption = 2.5
+        
+        while current_date <= end_date:
+            # Generate consumption for the day
+            daily_consumption = self._generate_daily_consumption(current_date, base_daily_consumption)
+            current_reading += daily_consumption
+            
+            readings.append({
+                'date': current_date,
+                'reading': round(current_reading, 2),
+                'consumption': round(daily_consumption, 2)
+            })
+            
+            current_date += timedelta(days=1)
+        
+        return readings
 
     def handle(self, *args, **options):
         self.stdout.write('Seeding database with sample data...')
+        
+        # Define today's date for consistent date handling
+        today = datetime.now().date()
         
         # Create admin user if not exists
         admin, created = User.objects.get_or_create(
@@ -32,6 +91,146 @@ class Command(BaseCommand):
             admin.set_password('admin123')
             admin.save()
             self.stdout.write(self.style.SUCCESS('Created admin user'))
+            
+        # Create demo customer - Juan Dela Cruz
+        demo_customer, created = User.objects.get_or_create(
+            username='juan.delacruz',
+            defaults={
+                'email': 'juan.delacruz@example.com',
+                'first_name': 'Juan',
+                'last_name': 'Dela Cruz',
+                'user_type': 'customer',
+                'purok_number': 1,
+                'specific_address': '123 Main Street',
+                'water_meter_id': '1602345678',
+                'is_membership_approved': True,
+                'phone_number': '09123456789',
+            }
+        )
+        if created:
+            demo_customer.set_password('customer123')
+            demo_customer.save()
+            self.stdout.write(self.style.SUCCESS('Created demo customer: juan.delacruz'))
+            
+            # Create bills for the demo customer (last 6 months)
+            for months_ago in range(6, 0, -1):
+                bill_date = today.replace(day=1) - timedelta(days=30 * months_ago)
+                due_date = bill_date.replace(day=10)
+                disconnection_date = bill_date.replace(day=25)
+                
+                # Generate readings for the month
+                start_date = bill_date
+                end_date = (bill_date + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+                
+                # Get or set the initial reading
+                if months_ago == 6:  # First month
+                    previous_reading = 1000.0  # Starting reading
+                else:
+                    previous_reading = float(Bill.objects.filter(
+                        customer=demo_customer,
+                        billing_month__lt=bill_date
+                    ).order_by('-billing_month').first().present_reading)
+                
+                # Generate daily readings
+                readings = self._generate_water_readings(start_date, end_date, previous_reading)
+                
+                # Get the final reading for the month
+                present_reading = readings[-1]['reading']
+                consumption = round(present_reading - previous_reading, 2)
+                
+                # Store daily readings in the database
+                for reading in readings:
+                    WaterUpdate.objects.create(
+                        customer=demo_customer,
+                        previous_reading=previous_reading if reading['date'] == start_date else 0,
+                        present_reading=reading['reading'],
+                        consumption=reading['consumption'],
+                        reading_date=reading['date'],
+                        recorded_by=admin,
+                        notes=f'Daily reading for {reading["date"].strftime("%Y-%m-%d")}'
+                    )
+                
+                # Calculate charges
+                minimum_cubic_meters = 10.0
+                rate_per_cubic_meter = 25.0
+                minimum_charge = 100.0
+                
+                if consumption <= minimum_cubic_meters:
+                    water_charge = minimum_charge
+                else:
+                    excess = consumption - minimum_cubic_meters
+                    water_charge = minimum_charge + (excess * rate_per_cubic_meter)
+                
+                # Create bill
+                bill = Bill.objects.create(
+                    customer=demo_customer,
+                    billing_month=bill_date,
+                    due_date=due_date,
+                    disconnection_date=disconnection_date,
+                    previous_reading=previous_reading,
+                    present_reading=present_reading,
+                    water_consumption=consumption,
+                    minimum_cubic_meters=minimum_cubic_meters,
+                    rate_per_cubic_meter=rate_per_cubic_meter,
+                    minimum_charge=minimum_charge,
+                    water_charge=water_charge,
+                    total_amount=water_charge,
+                    amount_paid=water_charge if random.choice([True, True, False]) else water_charge * Decimal('0.5'),
+                    balance=Decimal('0.00') if random.choice([True, True, False]) else water_charge * Decimal('0.5'),
+                    payment_status='paid' if random.choice([True, True, False]) else 'unpaid',
+                    created_by=admin,
+                    is_overdue=random.choice([True, False, False])
+                )
+                
+                # Create payment if paid
+                if bill.payment_status == 'paid':
+                    payment = Payment.objects.create(
+                        bill=bill,
+                        customer=demo_customer,
+                        amount=bill.amount_paid,
+                        payment_method=random.choice(['gcash', 'walk_in', 'bank_transfer']),
+                        payment_status='completed',
+                        reference_number=f'REF-{demo_customer.id:04d}-{bill.id:04d}-{random.randint(1000, 9999)}',
+                    )
+                    
+                    # Create payment proof for non-cash payments
+                    if payment.payment_method == 'gcash':
+                        PaymentProof.objects.create(
+                            customer=demo_customer,
+                            bill=bill,
+                            reference_number=payment.reference_number,
+                            transaction_id=f'GCASH-{random.randint(1000000000, 9999999999)}',
+                            screenshot='payment_proofs/sample_receipt.jpg',
+                            status='verified',
+                            notes='Payment verified by system for demo purposes'
+                        )
+                    
+                    # Create audit log
+                    PaymentAuditLog.objects.create(
+                        payment=payment,
+                        action='payment_created',
+                        user=admin,
+                        user_role='admin',
+                        status='completed',
+                        details={
+                            'method': payment.payment_method,
+                            'amount': str(payment.amount),
+                            'reference': payment.reference_number
+                        }
+                    )
+                
+                # Create water update
+                WaterUpdate.objects.create(
+                    customer=demo_customer,
+                    previous_reading=previous_reading,
+                    present_reading=present_reading,
+                    consumption=consumption,
+                    reading_date=bill_date,
+                    recorded_by=admin,
+                    notes=f'Monthly reading for {bill_date.strftime("%B %Y")}'
+                )
+                
+                self.stdout.write(self.style.SUCCESS(f'Created bill and records for Juan Dela Cruz - {bill_date.strftime("%B %Y")}'))
 
         # Create staff users
         staff_data = [

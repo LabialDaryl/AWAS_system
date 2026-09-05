@@ -52,6 +52,11 @@ def add_comment(request, complaint_id):
     """Add a comment to a complaint"""
     complaint = get_object_or_404(Complaint, id=complaint_id)
     
+    # Verify permission: only the complaint owner or staff can add comments
+    if complaint.customer != request.user and not request.user.is_staff_member:
+        messages.error(request, 'You do not have permission to comment on this complaint.')
+        return redirect('complaints:complaint_list')
+    
     if request.method == 'POST':
         form = ComplaintCommentForm(request.POST)
         if form.is_valid():

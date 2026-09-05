@@ -75,7 +75,7 @@
 
 {% block content %}
 {% load static %}
-<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background-image: url('{% static 'images/customer_login_bg.jpg' %}'); background-repeat: no-repeat; background-position: center center; background-attachment: fixed; background-size: cover; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;">
+<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background-image: url('{% static 'images/customer_login_bg.jpg' %}'); background-repeat: no-repeat; background-position: center center; background-attachment: fixed; background-size: cover; image-rendering: pixelated;">
   <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3));"></div>
 </div>
 <div class="container py-5" style="position: relative; z-index: 1;">
@@ -87,7 +87,7 @@
           <p style="color: #93c4f6; font-weight: 500; font-size: 1.5rem;">Please sign in to your account</p>
         </div>
 
-          {% if form.non_field_errors %}
+          {% if form and form.non_field_errors %}
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
               <i class="fas fa-exclamation-circle me-2"></i>
               {{ form.non_field_errors|striptags }}

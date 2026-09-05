@@ -1,4 +1,5 @@
 Django==4.2.7
+psycopg2-binary==2.9.9
 python-decouple==3.8
 Pillow==10.1.0
 django-crispy-forms==2.3
@@ -7,7 +8,6 @@ django-widget-tweaks==1.5.0
 requests==2.31.0
 python-dateutil==2.8.2
 pytz==2023.3
-stripe==7.4.0
 paypalrestsdk==1.13.1
 celery==5.3.4
 django-celery-beat==2.5.0

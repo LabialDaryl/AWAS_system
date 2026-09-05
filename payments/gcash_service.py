@@ -166,7 +166,23 @@ class GCashService:
             bool: True if signature is valid
         """
         try:
-            expected_signature, _ = self._generate_signature(payload, timestamp)
+            if not self.api_secret or not signature or not timestamp:
+                logger.warning("Webhook signature verification failed: missing API secret, signature, or timestamp")
+                return False
+
+            # Check timestamp freshness (reject requests older/newer than 5 minutes / 300 seconds)
+            current_ts = int(timezone.now().timestamp())
+            try:
+                request_ts = int(timestamp)
+            except (ValueError, TypeError):
+                logger.warning(f"Webhook rejected: invalid timestamp format {timestamp}")
+                return False
+
+            if abs(current_ts - request_ts) > 300:
+                logger.warning(f"Webhook rejected: timestamp {request_ts} is too skewed from current {current_ts}")
+                return False
+
+            expected_signature, _ = self._generate_signature(payload, str(request_ts))
             return hmac.compare_digest(expected_signature, signature)
         except Exception as e:
             logger.error(f"Webhook signature verification error: {str(e)}")

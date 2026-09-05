@@ -141,7 +141,7 @@ class PaymentViewsTest(TestCase):
         """Test that customer cannot access staff payment views"""
         self.client.login(username='customer1', password='testpass123')
         response = self.client.get(reverse('payments:staff_payment_list'))
-        self.assertRedirects(response, reverse('core:home'))
+        self.assertRedirects(response, reverse('core:home'), target_status_code=302)
     
     def test_admin_can_access_admin_dashboard(self):
         """Test that admin can access admin dashboard"""
@@ -153,7 +153,7 @@ class PaymentViewsTest(TestCase):
         """Test that staff cannot access admin views"""
         self.client.login(username='staff1', password='testpass123')
         response = self.client.get(reverse('payments:admin_dashboard'))
-        self.assertRedirects(response, reverse('core:home'))
+        self.assertRedirects(response, reverse('core:home'), target_status_code=302)
 
 
 class PaymentWebhookTest(TestCase):

@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AWAS - Adlay Water Augmentation System</title>
+    <title>AWAS - Automated Water Augmentation System</title>
     <!-- Favicon -->
     <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon">
     <link rel="icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon">
@@ -149,10 +149,13 @@
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                  <a class="dropdown-item d-flex align-items-center text-danger" href="{% url 'accounts:logout' %}">
-                    <i class="fas fa-sign-out-alt me-2"></i>
-                    <span>Logout</span>
-                  </a>
+                  <form method="post" action="{% url 'accounts:logout' %}" class="m-0 p-0">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item d-flex align-items-center text-danger border-0 bg-transparent w-100" style="cursor: pointer;">
+                      <i class="fas fa-sign-out-alt me-2"></i>
+                      <span>Logout</span>
+                    </button>
+                  </form>
                 </li>
               </ul>
             </div>
@@ -192,7 +195,7 @@
               <h5 class="fw-bold text-primary mb-3">
                 <i class="fas fa-tint me-2"></i>AWAS
               </h5>
-              <p class="text-light mb-4 opacity-75">Adlay Water Augmentation System - Providing reliable water services to our community with modern technology and dedicated support.</p>
+              <p class="text-light mb-4 opacity-75">Automated Water Augmentation System - Providing reliable water services to our community with modern technology and dedicated support.</p>
               <div class="social-links">
                 <a href="#" class="text-light me-3" title="Facebook"><i class="fab fa-facebook-f"></i></a>
                 <a href="#" class="text-light me-3" title="Twitter"><i class="fab fa-twitter"></i></a>
@@ -260,7 +263,7 @@
         <hr class="my-4 border-gray-600">
         <div class="row align-items-center">
           <div class="col-md-6">
-            <p class="text-light mb-0 opacity-75">&copy; {{ now|date:'Y' }} AWAS - Adlay Water Augmentation System. All rights reserved.</p>
+            <p class="text-light mb-0 opacity-75">&copy; {{ now|date:'Y' }} AWAS - Automated Water Augmentation System. All rights reserved.</p>
           </div>
           <div class="col-md-6 text-md-end">
             <a href="#" class="text-light text-decoration-none me-3 opacity-75 hover-opacity-100">Privacy Policy</a>

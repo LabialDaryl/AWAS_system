@@ -87,9 +87,9 @@ def generate_pdf_receipt(payment):
         ['Billing Month:', bill.billing_month.strftime('%B %Y')],
         ['Due Date:', bill.due_date.strftime('%B %d, %Y')],
         ['Water Consumption:', f"{bill.water_consumption} cubic meters"],
-        ['Water Charge:', f"₱{bill.water_charge:.2f}"],
-        ['Total Amount:', f"₱{bill.total_amount:.2f}"],
-        ['Amount Paid:', f"₱{payment.amount:.2f}"],
+        ['Water Charge:', f"PHP {bill.water_charge:.2f}"],
+        ['Total Amount:', f"PHP {bill.total_amount:.2f}"],
+        ['Amount Paid:', f"PHP {payment.amount:.2f}"],
     ]
     
     bill_table = Table(bill_data, colWidths=[2*inch, 4*inch])

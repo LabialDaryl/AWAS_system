@@ -13,6 +13,7 @@ from django.views.decorators.http import require_http_methods
 from django.db import transaction
 from django.db.models import Q, Sum, Count
 from django.core.paginator import Paginator
+from decimal import Decimal
 import json
 import logging
 
@@ -102,8 +103,7 @@ def initiate_payment(request, bill_id):
                     customer=request.user,
                     amount=bill.total_amount,
                     payment_status='pending',
-                    payment_method=payment_method,
-                    created_by=request.user
+                    payment_method=payment_method
                 )
                 # Log the payment creation
                 log_payment_action(payment, 'payment_created', request.user, request)
@@ -134,8 +134,7 @@ def initiate_payment(request, bill_id):
             customer=request.user,
             amount=bill.total_amount,
             payment_status='pending',
-            payment_method='gcash',  # Default
-            created_by=request.user
+            payment_method='gcash'  # Default
         )
         log_payment_action(payment, 'payment_created', request.user, request)
     
@@ -259,12 +258,10 @@ def payment_history(request):
     # Get payment proofs for each payment
     payment_proofs = {}
     for payment in page_obj:
-        try:
-            # Get proof using bill field instead of payment
-            proof = PaymentProof.objects.get(bill=payment.bill)
+        # Get proof using bill field instead of payment
+        proof = PaymentProof.objects.filter(bill=payment.bill).order_by('-submitted_at').first()
+        if proof:
             payment_proofs[payment.id] = proof
-        except PaymentProof.DoesNotExist:
-            pass
     
     context = {
         'page_obj': page_obj,
@@ -363,7 +360,7 @@ def view_payment_proof(request, proof_id):
     proof = get_object_or_404(PaymentProof, id=proof_id)
     
     # Check permissions
-    if not (request.user == proof.customer or request.user.is_staff or request.user.is_superuser):
+    if not (request.user == proof.customer or request.user.is_staff_member or request.user.is_superuser):
         messages.error(request, 'You do not have permission to view this proof.')
         return redirect('core:home')
     
@@ -379,7 +376,7 @@ def view_payment_proof(request, proof_id):
 @login_required
 def pending_payment_proofs(request):
     """List all pending payment proofs for staff verification"""
-    if not (request.user.is_staff or request.user.is_superuser):
+    if not (request.user.is_staff_member or request.user.is_superuser):
         messages.error(request, 'Access denied.')
         return redirect('core:home')
     
@@ -397,7 +394,7 @@ def pending_payment_proofs(request):
 @login_required
 def verify_payment_proof(request, proof_id):
     """Verify or reject a payment proof - Staff only"""
-    if not (request.user.is_staff or request.user.is_superuser):
+    if not (request.user.is_staff_member or request.user.is_superuser):
         messages.error(request, 'Access denied.')
         return redirect('core:home')
     
@@ -434,9 +431,33 @@ def verify_payment_proof(request, proof_id):
                     bill.payment_status = 'paid'
                     bill.save()
                     
+                    # Ensure a completed Payment record exists for history, receipts, and reporting
+                    payment = Payment.objects.filter(bill=bill, customer=bill.customer).order_by('-created_at').first()
+                    if payment and payment.payment_status in ['pending', 'processing', 'pending_verification']:
+                        payment.payment_status = 'completed'
+                        payment.amount = bill.total_amount
+                        payment.payment_method = 'gcash'
+                        payment.reference_number = proof.reference_number
+                        payment.verified_by = request.user
+                        payment.verified_at = timezone.now()
+                        payment.notes = f"Verified from payment proof #{proof.id}. Reason: {reason}"
+                        payment.save()
+                    elif not payment or payment.payment_status != 'completed':
+                        payment = Payment.objects.create(
+                            bill=bill,
+                            customer=bill.customer,
+                            amount=bill.total_amount,
+                            payment_method='gcash',
+                            payment_status='completed',
+                            reference_number=proof.reference_number,
+                            verified_by=request.user,
+                            verified_at=timezone.now(),
+                            notes=f"Created & verified from payment proof #{proof.id}. Reason: {reason}"
+                        )
+                    
                     # Log the action
                     log_payment_action(
-                        payment=None,
+                        payment=payment,
                         action='payment_verified',
                         user=request.user,
                         request=request,
@@ -448,7 +469,6 @@ def verify_payment_proof(request, proof_id):
                         }
                     )
                     
-                    # TODO: Send notification email to customer
                     messages.success(request, 'Payment proof has been verified. Bill has been marked as paid.')
                 else:
                     # Log rejection
@@ -484,7 +504,7 @@ def verify_payment_proof(request, proof_id):
 @login_required
 def payment_proof_audit_logs(request):
     """View payment proof audit logs - Staff and Admin"""
-    if not (request.user.is_staff or request.user.is_superuser):
+    if not (request.user.is_staff_member or request.user.is_superuser):
         messages.error(request, 'Access denied.')
         return redirect('core:home')
     
@@ -554,8 +574,32 @@ def admin_override_proof(request, proof_id):
             bill.payment_status = 'paid'
             bill.save()
             
+            # Ensure completed Payment record exists
+            payment = Payment.objects.filter(bill=bill, customer=bill.customer).order_by('-created_at').first()
+            if payment and payment.payment_status in ['pending', 'processing', 'pending_verification']:
+                payment.payment_status = 'completed'
+                payment.amount = bill.total_amount
+                payment.payment_method = 'gcash'
+                payment.reference_number = proof.reference_number
+                payment.verified_by = request.user
+                payment.verified_at = timezone.now()
+                payment.notes = f"Admin override verified from payment proof #{proof.id}. Reason: {reason}"
+                payment.save()
+            elif not payment or payment.payment_status != 'completed':
+                payment = Payment.objects.create(
+                    bill=bill,
+                    customer=bill.customer,
+                    amount=bill.total_amount,
+                    payment_method='gcash',
+                    payment_status='completed',
+                    reference_number=proof.reference_number,
+                    verified_by=request.user,
+                    verified_at=timezone.now(),
+                    notes=f"Admin override created & verified from payment proof #{proof.id}. Reason: {reason}"
+                )
+            
             log_payment_action(
-                payment=None,
+                payment=payment,
                 action='payment_verified',
                 user=request.user,
                 request=request,
@@ -575,8 +619,15 @@ def admin_override_proof(request, proof_id):
                 bill.amount_paid = 0
                 bill.save()
             
+            # Mark associated payment as failed if exists
+            payment = Payment.objects.filter(bill=bill, customer=bill.customer).order_by('-created_at').first()
+            if payment and payment.payment_status in ['completed', 'pending', 'processing', 'pending_verification']:
+                payment.payment_status = 'failed'
+                payment.notes = f"Payment marked as failed due to admin override rejected proof #{proof.id}. Reason: {reason}"
+                payment.save()
+            
             log_payment_action(
-                payment=None,
+                payment=payment,
                 action='payment_rejected',
                 user=request.user,
                 request=request,
@@ -944,6 +995,12 @@ def approve_refund(request, payment_id):
                 payment.refund_transaction_id = result.get('refund_transaction_id', '')
                 payment.payment_status = 'refunded'
                 payment.save()
+
+                if payment.bill:
+                    bill = payment.bill
+                    refunded_sum = Decimal(str(payment.refund_amount or payment.amount))
+                    bill.amount_paid = max(Decimal('0.00'), Decimal(str(bill.amount_paid or 0)) - refunded_sum)
+                    bill.save()
                 
                 PaymentHistory.objects.create(
                     payment=payment,
@@ -969,6 +1026,12 @@ def approve_refund(request, payment_id):
             payment.refund_approved_at = timezone.now()
             payment.payment_status = 'refunded'
             payment.save()
+
+            if payment.bill:
+                bill = payment.bill
+                refunded_sum = Decimal(str(payment.refund_amount or payment.amount))
+                bill.amount_paid = max(Decimal('0.00'), Decimal(str(bill.amount_paid or 0)) - refunded_sum)
+                bill.save()
             
             PaymentHistory.objects.create(
                 payment=payment,
@@ -1268,13 +1331,14 @@ def paymaya_callback(request):
     return JsonResponse({'status': 'received'})
 
 
+@login_required
 def check_payment_status(request, payment_id):
     """Check payment status manually for pending payments"""
     try:
         payment = get_object_or_404(Payment, payment_id=payment_id)
         
         # Verify user has permission to check this payment
-        if request.user.is_authenticated and not request.user.is_staff and payment.customer != request.user:
+        if not request.user.is_staff_member and not request.user.is_superuser and payment.customer != request.user:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'error': 'Permission denied'}, status=403)
             messages.error(request, 'You do not have permission to view this payment.')

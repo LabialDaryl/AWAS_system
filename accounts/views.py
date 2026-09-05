@@ -12,6 +12,7 @@ from django.contrib.auth.views import (
 )
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from django.contrib.auth import get_user_model
+from django.utils.http import url_has_allowed_host_and_scheme
 from .models import User
 from .forms import UserLoginForm, UserProfileForm, UserSearchForm, CustomerSelfRegistrationForm
 
@@ -36,6 +37,10 @@ def user_login(request):
                 login(request, user)
                 messages.success(request, f'Welcome back, {user.get_full_name()}!')
                 
+                next_url = request.POST.get('next') or request.GET.get('next')
+                if next_url and url_has_allowed_host_and_scheme(url=next_url, allowed_hosts={request.get_host()}):
+                    return redirect(next_url)
+
                 # Redirect based on user type
                 if user.is_staff or user.user_type == 'staff':
                     return redirect('billing:staff_dashboard')
@@ -53,7 +58,10 @@ def user_login(request):
         from django.http import JsonResponse
         if request.method == 'POST':
             if form.is_valid():
-                return JsonResponse({'success': True, 'redirect': request.GET.get('next', '/')})
+                next_url = request.GET.get('next', '')
+                if not next_url or not url_has_allowed_host_and_scheme(url=next_url, allowed_hosts={request.get_host()}):
+                    next_url = '/'
+                return JsonResponse({'success': True, 'redirect': next_url})
             else:
                 return JsonResponse({'success': False, 'errors': form.errors})
     

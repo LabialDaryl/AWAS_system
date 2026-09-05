@@ -1,4 +1,4 @@
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, time
 from django.utils import timezone
 from django.conf import settings
 from django.urls import reverse
@@ -72,8 +72,16 @@ def notifications(request):
     system_notifications = get_system_notifications(request)
     notification_items.extend(system_notifications)
     
-    # Sort by timestamp (newest first)
-    notification_items.sort(key=lambda x: x.get('timestamp', datetime.min), reverse=True)
+    # Safely sort by timestamp (newest first)
+    def get_sort_key(item):
+        ts = item.get('timestamp')
+        if ts is None:
+            return timezone.now()
+        if isinstance(ts, datetime):
+            return ts if timezone.is_aware(ts) else timezone.make_aware(ts)
+        return timezone.make_aware(datetime.combine(ts, time.min))
+
+    notification_items.sort(key=get_sort_key, reverse=True)
     
     # Badge count reflects only persistent unread notifications from the database
     unread_count = unread_qs.count()
@@ -125,7 +133,7 @@ def get_system_notifications(request):
                 'text': f"Bill due in {days_left} day(s) - {bill.billing_month.strftime('%b %Y')}",
                 'url': reverse('billing:customer_bills'),
                 'unread': False,
-                'timestamp': bill.due_date,
+                'timestamp': timezone.make_aware(datetime.combine(bill.due_date, time.min)),
             })
 
         # Water updates
